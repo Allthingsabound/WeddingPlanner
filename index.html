@@ -949,6 +949,111 @@
 
   .apt-card-del:hover { color: var(--danger); }
 
+  /* ── GIFT REGISTRY ── */
+  .reg-share-banner {
+    background: linear-gradient(135deg, var(--petal) 0%, #fff 100%);
+    border: 1px solid var(--blush);
+    border-radius: 14px;
+    padding: 1.4rem 1.8rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .reg-share-text { font-size: 0.83rem; color: var(--muted); line-height: 1.5; }
+  .reg-share-text strong { color: var(--mocha); font-weight: 600; display: block; margin-bottom: 0.2rem; }
+  .btn-share {
+    background: var(--grad-accent);
+    color: white; border: none;
+    padding: 0.65rem 1.4rem;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem; font-weight: 500;
+    letter-spacing: 0.04em; cursor: pointer;
+    white-space: nowrap; transition: opacity 0.2s;
+  }
+  .btn-share:hover { opacity: 0.88; }
+
+  .reg-add-form {
+    background: var(--petal);
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .reg-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 1rem;
+  }
+  .reg-form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+  .reg-form-group label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+
+  .reg-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.25rem;
+  }
+  .reg-card {
+    background: white;
+    border: 1px solid var(--blush);
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    transition: transform 0.22s, box-shadow 0.22s;
+  }
+  .reg-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+  .reg-card-img {
+    width: 100%; aspect-ratio: 4/3;
+    object-fit: cover; display: block;
+    background: var(--petal);
+  }
+  .reg-card-placeholder {
+    width: 100%; aspect-ratio: 4/3;
+    background: var(--petal);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.5rem; color: var(--blush);
+  }
+  .reg-card-body { padding: 0.9rem 1rem 1rem; }
+  .reg-card-cat {
+    font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.07em;
+    color: var(--sand); margin-bottom: 0.3rem;
+  }
+  .reg-card-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.15rem; color: var(--mocha); font-weight: 600;
+    line-height: 1.2; margin-bottom: 0.3rem;
+  }
+  .reg-card-price {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.35rem; color: var(--text); font-weight: 300;
+    margin-bottom: 0.4rem;
+  }
+  .reg-card-notes { font-size: 0.76rem; color: var(--muted); font-style: italic; margin-bottom: 0.75rem; }
+  .reg-card-actions { display: flex; gap: 0.5rem; }
+  .reg-buy-btn {
+    flex: 1; background: var(--mocha); color: white; border: none;
+    padding: 0.5rem 0.8rem; border-radius: 8px;
+    font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 500;
+    cursor: pointer; text-align: center; text-decoration: none;
+    display: inline-block; transition: background 0.2s;
+  }
+  .reg-buy-btn:hover { background: var(--deep); }
+  .reg-buy-btn.no-link { opacity: 0.4; cursor: default; pointer-events: none; }
+  .reg-del-btn {
+    background: none; border: 1px solid var(--blush);
+    border-radius: 8px; padding: 0.5rem 0.65rem;
+    cursor: pointer; color: var(--muted); font-size: 0.8rem;
+    transition: all 0.2s;
+  }
+  .reg-del-btn:hover { border-color: var(--danger); color: var(--danger); }
+  .reg-empty {
+    text-align: center; color: var(--muted); font-style: italic;
+    font-size: 0.85rem; padding: 3rem 0; grid-column: 1/-1;
+  }
+
   .apt-viewing-add {
     display: flex;
     gap: 0.75rem;
@@ -1260,6 +1365,7 @@
     <li><button data-page="notes" onclick="showPage('notes', this)">Notes</button></li>
     <li><button data-page="honeymoon" onclick="showPage('honeymoon', this)">🌴 Honeymoon</button></li>
     <li><button data-page="apartment" onclick="showPage('apartment', this)">🏠 Apartment</button></li>
+    <li><button data-page="registry" onclick="showPage('registry', this)">🎁 Gifts</button></li>
   </ul>
 </nav>
 
@@ -1698,6 +1804,62 @@
 
   </div>
 
+  <!-- GIFT REGISTRY -->
+  <div class="page" id="page-registry">
+    <h1 class="section-title">Gift <em>Registry</em></h1>
+    <p class="section-sub">Add gifts you'd love — then share the link with your guests. They can browse and click straight to the store.</p>
+
+    <div class="reg-share-banner">
+      <div class="reg-share-text">
+        <strong>Share your registry</strong>
+        Copy a link that encodes your current list — anyone can open it without logging in.
+      </div>
+      <button class="btn-share" onclick="copyRegistryLink()">Copy shareable link</button>
+    </div>
+
+    <div class="reg-add-form">
+      <div class="reg-form-grid">
+        <div class="reg-form-group" style="grid-column:span 2">
+          <label>Gift name *</label>
+          <input class="field-line" type="text" id="regName" placeholder="e.g. KitchenAid Stand Mixer" />
+        </div>
+        <div class="reg-form-group">
+          <label>Price (USD)</label>
+          <input class="field-line" type="number" id="regPrice" placeholder="0.00" min="0" step="0.01" />
+        </div>
+        <div class="reg-form-group">
+          <label>Category</label>
+          <select class="field-line" id="regCat">
+            <option value="Kitchen &amp; Dining">Kitchen &amp; Dining</option>
+            <option value="Bedroom &amp; Bath">Bedroom &amp; Bath</option>
+            <option value="Home Décor">Home Décor</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Travel">Travel</option>
+            <option value="Experience">Experience</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="reg-form-group" style="grid-column:span 2">
+          <label>Store / Buy link</label>
+          <input class="field-line" type="url" id="regUrl" placeholder="https://amazon.com/..." />
+        </div>
+        <div class="reg-form-group" style="grid-column:span 2">
+          <label>Product image URL (optional)</label>
+          <input class="field-line" type="url" id="regImg" placeholder="https://... (paste a product photo URL)" />
+        </div>
+        <div class="reg-form-group" style="grid-column:span 2">
+          <label>Notes</label>
+          <input class="field-line" type="text" id="regNotes" placeholder="e.g. Silver or White, Size 10, Any style" />
+        </div>
+      </div>
+      <button class="btn-primary" onclick="addRegistryItem()">+ Add Gift</button>
+    </div>
+
+    <div class="reg-grid" id="regGrid">
+      <div class="reg-empty" id="regEmpty">No gifts yet — add your first one above</div>
+    </div>
+  </div>
+
 </main>
 
 <footer class="app-footer">
@@ -1723,7 +1885,8 @@ let state = {
   notes: [],
   weddingDate: '',
   honeymoon: { destination: '', depart: '', returnDate: '', hotel: '', confirm: '', hotelNotes: '', budget: '', spent: '', activities: [], packing: [] },
-  apartment: { income: '', expenses: '', utilities: '', apartments: [], viewings: [], musts: [], nices: [], questions: [], tasks: [] }
+  apartment: { income: '', expenses: '', utilities: '', apartments: [], viewings: [], musts: [], nices: [], questions: [], tasks: [] },
+  registry: []
 };
 
 const STORAGE_KEY = 'weddingHub_airy_v1';
@@ -1855,6 +2018,7 @@ function renderAll() {
   renderNotes();
   renderHoneymoon();
   renderApartment();
+  renderRegistry();
   if (state.weddingDate) startCountdown();
 }
 
@@ -2527,6 +2691,79 @@ function addAptTask() {
 }
 function toggleAptTask(id) { const t = state.apartment.tasks.find(t => t.id === id); if (t) { t.done = !t.done; save(); renderApartment(); } }
 function deleteAptTask(id) { state.apartment.tasks = state.apartment.tasks.filter(t => t.id !== id); save(); renderApartment(); }
+
+// ── GIFT REGISTRY ──
+function renderRegistry() {
+  if (!state.registry) state.registry = [];
+  const grid = document.getElementById('regGrid');
+  if (!grid) return;
+  if (!state.registry.length) {
+    grid.innerHTML = '<div class="reg-empty" id="regEmpty">No gifts yet — add your first one above</div>';
+    return;
+  }
+  grid.innerHTML = state.registry.map(item => `
+    <div class="reg-card">
+      ${item.image
+        ? `<img class="reg-card-img" src="${esc(item.image)}" alt="${esc(item.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        : ''}
+      <div class="reg-card-placeholder" style="${item.image ? 'display:none' : ''}">🎁</div>
+      <div class="reg-card-body">
+        <div class="reg-card-cat">${esc(item.category)}</div>
+        <div class="reg-card-name">${esc(item.name)}</div>
+        ${item.price ? `<div class="reg-card-price">$${parseFloat(item.price).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</div>` : ''}
+        ${item.notes ? `<div class="reg-card-notes">${esc(item.notes)}</div>` : ''}
+        <div class="reg-card-actions">
+          ${item.url
+            ? `<a class="reg-buy-btn" href="${esc(item.url)}" target="_blank" rel="noopener">Buy this gift →</a>`
+            : `<span class="reg-buy-btn no-link">No link added</span>`}
+          <button class="reg-del-btn" onclick="deleteRegistryItem(${item.id})" title="Remove">✕</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function addRegistryItem() {
+  if (!state.registry) state.registry = [];
+  const name = document.getElementById('regName').value.trim();
+  if (!name) { document.getElementById('regName').focus(); return; }
+  state.registry.push({
+    id: Date.now(),
+    name,
+    price: document.getElementById('regPrice').value || '',
+    category: document.getElementById('regCat').value,
+    url: document.getElementById('regUrl').value.trim(),
+    image: document.getElementById('regImg').value.trim(),
+    notes: document.getElementById('regNotes').value.trim()
+  });
+  ['regName','regPrice','regUrl','regImg','regNotes'].forEach(id => document.getElementById(id).value = '');
+  save(); renderRegistry();
+  toast('Gift added ✓');
+}
+
+function deleteRegistryItem(id) {
+  state.registry = (state.registry || []).filter(r => r.id !== id);
+  save(); renderRegistry();
+}
+
+function b64Encode(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  bytes.forEach(b => bin += String.fromCharCode(b));
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+function copyRegistryLink() {
+  const items = state.registry || [];
+  if (!items.length) { toast('Add at least one gift first'); return; }
+  const data = b64Encode(JSON.stringify(items));
+  const base = location.href.replace(/[^/]*$/, '') + 'registry.html';
+  const url = base + '#r=' + data;
+  navigator.clipboard.writeText(url)
+    .then(() => toast('Link copied! Share it with your guests ✓'))
+    .catch(() => {
+      prompt('Copy this link and share it with your guests:', url);
+    });
+}
 
 // ── PRE-POPULATED WEDDING CHECKLIST ──
 const WEDDING_TASKS = [
