@@ -1190,8 +1190,64 @@
     * { transition-duration: 0.01ms !important; }
   }
 </style>
+
+<!-- ════════ ACCESS GATE (soft client-side lock) ════════ -->
+<style>
+  html:not(.wh-authed) nav,
+  html:not(.wh-authed) main,
+  html:not(.wh-authed) .app-footer { display: none !important; }
+  html.wh-authed .lock-screen { display: none !important; }
+
+  .lock-screen {
+    position: fixed; inset: 0; z-index: 1000;
+    display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+    background:
+      radial-gradient(1100px 560px at 100% -8%, rgba(247,238,231,0.95), transparent 60%),
+      radial-gradient(900px 520px at -8% 108%, rgba(243,231,220,0.9), transparent 55%),
+      var(--warm-white);
+  }
+  .lock-card {
+    width: 100%; max-width: 360px; background: #fff;
+    border: 1px solid var(--blush); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg); padding: 2.6rem 2rem;
+    text-align: center; display: flex; flex-direction: column; gap: 0.8rem;
+    animation: pageIn 0.5s var(--ease) both;
+  }
+  .lock-emblem { font-size: 2rem; color: var(--sand); line-height: 1; }
+  .lock-title { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2rem; color: var(--mocha); line-height: 1.1; }
+  .lock-title span { font-style: italic; color: var(--sand); }
+  .lock-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.4rem; letter-spacing: 0.02em; }
+  .lock-input {
+    width: 100%; padding: 0.72rem 1rem; border: 1px solid var(--blush);
+    border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.9rem;
+    background: var(--warm-white); color: var(--text); outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .lock-input:focus { border-color: var(--sand); box-shadow: var(--ring); }
+  .lock-btn { width: 100%; margin-top: 0.3rem; padding: 0.8rem; }
+  .lock-error { min-height: 1.05rem; font-size: 0.78rem; color: var(--danger); }
+  @keyframes shake { 10%,90%{transform:translateX(-1px)} 20%,80%{transform:translateX(2px)} 30%,50%,70%{transform:translateX(-5px)} 40%,60%{transform:translateX(5px)} }
+  .lock-card.shake { animation: shake 0.4s; }
+</style>
+<script>
+  // Pre-paint gate: reveal the app only if this device has unlocked before.
+  try { if (localStorage.getItem('wh_auth_v1') === '1') document.documentElement.classList.add('wh-authed'); } catch (e) {}
+</script>
 </head>
 <body>
+
+<!-- Access gate: hidden once this device has unlocked -->
+<div class="lock-screen" id="lockScreen">
+  <form class="lock-card" id="lockForm" onsubmit="return tryUnlock(event)">
+    <div class="lock-emblem">♡</div>
+    <div class="lock-title">Our <span>Wedding</span></div>
+    <p class="lock-sub">Please sign in to continue</p>
+    <input class="lock-input" id="lockUser" type="text" placeholder="Username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" />
+    <input class="lock-input" id="lockPass" type="password" placeholder="Password" autocomplete="current-password" />
+    <button class="btn-primary lock-btn" type="submit">Unlock</button>
+    <div class="lock-error" id="lockError"></div>
+  </form>
+</div>
 
 <nav>
   <div class="nav-brand">Our <span>Wedding</span></div>
@@ -1650,6 +1706,8 @@
   <button class="link-btn" onclick="exportData()">Download a backup</button>
   <span class="dot">·</span>
   <label class="link-btn" tabindex="0">Restore from backup<input type="file" accept="application/json,.json" onchange="importData(this)" hidden /></label>
+  <span class="dot">·</span>
+  <button class="link-btn" onclick="lockSite()">Lock</button>
 </footer>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -1731,6 +1789,53 @@ function importData(input) {
     input.value = '';
   };
   reader.readAsText(file);
+}
+
+// ── ACCESS GATE (soft client-side lock — a deterrent, not bank-grade security) ──
+const AUTH = {
+  salt: '82b872c1bd6fc7ccbbcde4517a5014b6',
+  iter: 150000,
+  hash: '8fdb5a6ea91ac0c0160a7fbdfeea6781db34e17c2b3b372bbac0db21b6432377'
+};
+
+async function deriveHash(user, pass) {
+  const enc = new TextEncoder();
+  const cred = user.trim().toLowerCase() + ':' + pass;
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(cred), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: enc.encode(AUTH.salt), iterations: AUTH.iter, hash: 'SHA-256' },
+    keyMaterial, 256
+  );
+  return Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function tryUnlock(e) {
+  if (e) e.preventDefault();
+  const form = document.getElementById('lockForm');
+  const errEl = document.getElementById('lockError');
+  const user = document.getElementById('lockUser').value;
+  const pass = document.getElementById('lockPass').value;
+  try {
+    const h = await deriveHash(user, pass);
+    if (h === AUTH.hash) {
+      localStorage.setItem('wh_auth_v1', '1');
+      document.documentElement.classList.add('wh-authed');
+      errEl.textContent = '';
+    } else {
+      errEl.textContent = 'Incorrect username or password.';
+      form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake');
+      document.getElementById('lockPass').value = '';
+    }
+  } catch (ex) {
+    errEl.textContent = 'Unlocking needs a secure (https) connection.';
+  }
+  return false;
+}
+
+function lockSite() {
+  localStorage.removeItem('wh_auth_v1');
+  document.documentElement.classList.remove('wh-authed');
+  location.reload();
 }
 
 function load() {
@@ -2538,6 +2643,12 @@ renderChecklist();
 // Reopen whatever tab you were last on
 if (state.activePage && state.activePage !== 'vision') {
   showPage(state.activePage);
+}
+
+// Focus the login field if the gate is showing
+if (!document.documentElement.classList.contains('wh-authed')) {
+  var _lockUser = document.getElementById('lockUser');
+  if (_lockUser) _lockUser.focus();
 }
 
 </script>
