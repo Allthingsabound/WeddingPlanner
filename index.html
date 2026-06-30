@@ -1,0 +1,2276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Our Wedding Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --warm-white: #FDFAF6;
+    --petal: #F7EEE7;
+    --blush: #E8D5C4;
+    --sand: #C9A98A;
+    --mocha: #6B5744;
+    --deep: #3D2B1F;
+    --text: #2E1F14;
+    --muted: #9C8070;
+    --success: #7A9E7E;
+    --danger: #C97B6B;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--warm-white);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── NAV ── */
+  nav {
+    background: var(--warm-white);
+    border-bottom: 1px solid var(--blush);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    height: 60px;
+  }
+
+  .nav-brand {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--mocha);
+    letter-spacing: 0.02em;
+  }
+
+  .nav-brand span { font-style: italic; color: var(--sand); }
+
+  .nav-tabs {
+    display: flex;
+    gap: 0.25rem;
+    list-style: none;
+    overflow-x: auto;
+  }
+
+  .nav-tabs button {
+    background: none;
+    border: none;
+    padding: 0.4rem 0.9rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 20px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .nav-tabs button:hover { background: var(--petal); color: var(--mocha); }
+  .nav-tabs button.active { background: var(--blush); color: var(--mocha); }
+
+  /* ── MAIN ── */
+  main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.2rem;
+    font-weight: 300;
+    color: var(--mocha);
+    margin-bottom: 0.25rem;
+  }
+
+  .section-title em { font-style: italic; color: var(--sand); }
+  .section-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 2rem; letter-spacing: 0.03em; }
+
+  /* ── VISION BOARD ── */
+  .vision-add {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .vision-add input {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.65rem 1rem;
+    border: 1px solid var(--blush);
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    background: white;
+    color: var(--text);
+    outline: none;
+    transition: border 0.2s;
+  }
+
+  .vision-add input:focus { border-color: var(--sand); }
+
+  .btn-primary {
+    background: var(--mocha);
+    color: white;
+    border: none;
+    padding: 0.65rem 1.4rem;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-primary:hover { background: var(--deep); }
+
+  .vision-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .vision-card {
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px rgba(107,87,68,0.10);
+    overflow: hidden;
+    position: relative;
+    transform: rotate(var(--tilt, 0deg));
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .vision-card:hover { transform: rotate(0deg) scale(1.03); box-shadow: 0 6px 24px rgba(107,87,68,0.18); }
+
+  .vision-card img {
+    width: 100%;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+    display: block;
+  }
+
+  .vision-card-footer {
+    padding: 0.5rem 0.75rem 0.6rem;
+    background: white;
+  }
+
+  .vision-card-note {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-style: italic;
+    width: 100%;
+    border: none;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+    background: transparent;
+  }
+
+  .vision-delete {
+    position: absolute;
+    top: 6px; right: 6px;
+    background: rgba(255,255,255,0.85);
+    border: none;
+    border-radius: 50%;
+    width: 24px; height: 24px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: var(--danger);
+  }
+
+  .vision-card:hover .vision-delete { display: flex; }
+
+  .vision-empty {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--muted);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem;
+    font-style: italic;
+    border: 2px dashed var(--blush);
+    border-radius: 12px;
+  }
+
+  /* ── SAVINGS ── */
+  .savings-hero {
+    background: linear-gradient(135deg, var(--petal) 0%, var(--blush) 100%);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .savings-hero::after {
+    content: '💍';
+    position: absolute;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 4rem;
+    opacity: 0.3;
+  }
+
+  .savings-goal-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.4rem; }
+  .savings-amount { font-family: 'Cormorant Garamond', serif; font-size: 3rem; font-weight: 300; color: var(--mocha); line-height: 1; }
+  .savings-amount span { font-size: 1.2rem; }
+  .savings-of { font-size: 0.85rem; color: var(--muted); margin-top: 0.4rem; margin-bottom: 1.25rem; }
+
+  .progress-bar-wrap {
+    background: rgba(255,255,255,0.6);
+    border-radius: 100px;
+    height: 10px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--sand), var(--mocha));
+    border-radius: 100px;
+    transition: width 0.6s ease;
+  }
+
+  .progress-pct { font-size: 0.78rem; color: var(--mocha); font-weight: 600; }
+
+  .savings-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .savings-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    border: 1px solid var(--blush);
+  }
+
+  .savings-card label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); display: block; margin-bottom: 0.5rem; }
+
+  .savings-card input {
+    width: 100%;
+    border: 1px solid var(--blush);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--text);
+    background: var(--warm-white);
+    outline: none;
+  }
+
+  .savings-card input:focus { border-color: var(--sand); }
+
+  .savings-log { margin-top: 0.5rem; }
+
+  .log-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--petal);
+    font-size: 0.82rem;
+  }
+
+  .log-entry:last-child { border-bottom: none; }
+  .log-amount { font-weight: 600; color: var(--success); }
+  .log-date { color: var(--muted); font-size: 0.75rem; }
+
+  /* ── VENDORS ── */
+  .vendor-add-form {
+    background: var(--petal);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .vendor-add-form input, .vendor-add-form select, .vendor-add-form textarea {
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--blush);
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    background: white;
+    color: var(--text);
+    outline: none;
+  }
+
+  .vendor-add-form input:focus, .vendor-add-form select:focus, .vendor-add-form textarea:focus { border-color: var(--sand); }
+  .vendor-add-form textarea { grid-column: 1/-1; resize: vertical; min-height: 60px; }
+  .vendor-add-form .btn-primary { grid-column: 1/-1; }
+
+  .vendor-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .vendor-item {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid var(--blush);
+    padding: 1rem 1.25rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .vendor-status-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+
+  .vendor-status-dot.booked { background: var(--success); }
+  .vendor-status-dot.pending { background: var(--sand); }
+
+  .vendor-info { flex: 1; }
+  .vendor-name { font-weight: 600; font-size: 0.95rem; color: var(--text); }
+  .vendor-category { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 0.3rem; }
+  .vendor-details { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+  .vendor-price { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--mocha); font-weight: 600; white-space: nowrap; }
+
+  .vendor-delete {
+    background: none;
+    border: none;
+    color: var(--blush);
+    cursor: pointer;
+    font-size: 1rem;
+    transition: color 0.2s;
+    padding: 0;
+  }
+
+  .vendor-delete:hover { color: var(--danger); }
+
+  /* ── GUESTS ── */
+  .guest-stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .guest-stat {
+    background: white;
+    border: 1px solid var(--blush);
+    border-radius: 10px;
+    padding: 0.9rem 1.2rem;
+    flex: 1;
+    min-width: 100px;
+    text-align: center;
+  }
+
+  .guest-stat-num { font-family: 'Cormorant Garamond', serif; font-size: 2rem; color: var(--mocha); line-height: 1; }
+  .guest-stat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-top: 0.2rem; }
+
+  .guest-add-form {
+    background: var(--petal);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .guest-add-form input, .guest-add-form select {
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--blush);
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    background: white;
+    color: var(--text);
+    outline: none;
+  }
+
+  .guest-add-form .btn-primary { grid-column: 1/-1; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+
+  th {
+    text-align: left;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--blush);
+    font-weight: 500;
+  }
+
+  td {
+    padding: 0.65rem 0.75rem;
+    border-bottom: 1px solid var(--petal);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  .rsvp-badge {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+
+  .rsvp-yes { background: #EAF4EB; color: var(--success); }
+  .rsvp-no { background: #FAE8E5; color: var(--danger); }
+  .rsvp-pending { background: var(--petal); color: var(--muted); }
+
+  /* ── CHECKLIST ── */
+  .timeline-section { margin-bottom: 2.5rem; }
+
+  .timeline-month {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem;
+    color: var(--mocha);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .timeline-month::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--blush);
+  }
+
+  .checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 8px;
+    margin-bottom: 0.4rem;
+    background: white;
+    border: 1px solid var(--blush);
+    transition: background 0.2s;
+  }
+
+  .checklist-item.done { background: var(--petal); border-color: transparent; }
+  .checklist-item.done .item-text { text-decoration: line-through; color: var(--muted); }
+
+  .checklist-item input[type="checkbox"] {
+    accent-color: var(--mocha);
+    width: 15px; height: 15px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .item-text { font-size: 0.85rem; flex: 1; }
+  .item-category { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sand); font-weight: 500; }
+
+  .checklist-add {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .checklist-add input, .checklist-add select {
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--blush);
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    background: white;
+    color: var(--text);
+    outline: none;
+    flex: 1;
+    min-width: 140px;
+  }
+
+  /* ── NOTES ── */
+  .notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+
+  .note-card {
+    background: white;
+    border: 1px solid var(--blush);
+    border-radius: 12px;
+    padding: 1rem;
+    position: relative;
+    min-height: 140px;
+  }
+
+  .note-card textarea {
+    width: 100%;
+    min-height: 100px;
+    border: none;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.83rem;
+    color: var(--text);
+    resize: none;
+    background: transparent;
+    line-height: 1.6;
+  }
+
+  .note-delete {
+    position: absolute;
+    top: 0.5rem; right: 0.5rem;
+    background: none;
+    border: none;
+    color: var(--blush);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: color 0.2s;
+  }
+
+  .note-delete:hover { color: var(--danger); }
+
+  .note-add-btn {
+    background: var(--petal);
+    border: 2px dashed var(--blush);
+    border-radius: 12px;
+    min-height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    font-style: italic;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+
+  .note-add-btn:hover { background: var(--blush); color: var(--mocha); }
+
+
+  /* ── COUNTDOWN ── */
+  .countdown-block {
+    background: linear-gradient(135deg, var(--mocha) 0%, var(--deep) 100%);
+    border-radius: 16px;
+    padding: 2rem 2.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .countdown-block::after {
+    content: '♡';
+    position: absolute;
+    font-size: 8rem;
+    color: rgba(255,255,255,0.04);
+    right: 1rem;
+    top: -1rem;
+    pointer-events: none;
+  }
+
+  .countdown-eyebrow {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--sand);
+    margin-bottom: 0.75rem;
+  }
+
+  .countdown-date-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  .countdown-date-picker {
+    opacity: 0;
+    position: absolute;
+    pointer-events: none;
+    width: 0; height: 0;
+  }
+
+  .countdown-date-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    font-style: italic;
+    transition: color 0.2s;
+    border-bottom: 1px dashed rgba(255,255,255,0.2);
+    padding-bottom: 0.1rem;
+  }
+
+  .countdown-date-label:hover { color: var(--sand); }
+  .countdown-date-label.has-date { color: rgba(255,255,255,0.75); font-size: 0.85rem; font-style: normal; font-family: 'Inter', sans-serif; letter-spacing: 0.05em; border: none; }
+
+  .countdown-tiles {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .countdown-tile {
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    min-width: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+  }
+
+  .countdown-tile span {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.5rem;
+    font-weight: 300;
+    color: white;
+    line-height: 1;
+  }
+
+  .countdown-tile small {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--sand);
+  }
+
+  .countdown-married {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    color: white;
+    font-style: italic;
+  }
+
+  /* ── HONEYMOON ── */
+  .hm-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .hm-card {
+    background: white;
+    border: 1px solid var(--blush);
+    border-radius: 12px;
+    padding: 1.25rem 1.4rem;
+  }
+
+  .hm-card-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    color: var(--mocha);
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+
+  .hm-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+
+  .hm-field-group { margin-bottom: 0.85rem; }
+
+  .hm-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+  .field-line {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid var(--blush);
+    padding: 0.35rem 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    color: var(--text);
+    background: transparent;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .field-line:focus { border-bottom-color: var(--sand); }
+
+  .hm-nights {
+    font-size: 0.78rem;
+    color: var(--sand);
+    font-style: italic;
+    margin-top: 0.5rem;
+  }
+
+  .hm-budget-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    align-items: end;
+  }
+
+  .hm-list-item {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--petal);
+    font-size: 0.83rem;
+  }
+
+  .hm-list-item:last-child { border-bottom: none; }
+  .hm-list-item.checked .hm-item-text { text-decoration: line-through; color: var(--muted); }
+
+  .hm-list-item input[type="checkbox"] {
+    accent-color: var(--mocha);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .hm-item-text { flex: 1; }
+
+  .hm-item-del {
+    background: none;
+    border: none;
+    color: var(--blush);
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: color 0.2s;
+    padding: 0;
+  }
+
+  .hm-item-del:hover { color: var(--danger); }
+
+  @media (max-width: 640px) {
+    .hm-two-col { grid-template-columns: 1fr; }
+    .hm-budget-grid { grid-template-columns: 1fr 1fr; }
+    .countdown-tiles { gap: 0.6rem; }
+    .countdown-tile { min-width: 65px; padding: 0.75rem 1rem; }
+    .countdown-tile span { font-size: 2rem; }
+    .apt-afford-grid { grid-template-columns: 1fr; }
+    .apt-form-grid { grid-template-columns: 1fr; }
+    .apt-two-col { grid-template-columns: 1fr; }
+    .apt-viewing-add { flex-direction: column; }
+    .apt-afford-result-row { gap: 1rem; }
+    nav { padding: 0 1rem; }
+    .nav-brand { font-size: 1.1rem; }
+    .savings-controls { grid-template-columns: 1fr; }
+    .vendor-add-form { grid-template-columns: 1fr; }
+    .guest-add-form { grid-template-columns: 1fr; }
+  }
+
+  /* ── APARTMENT ── */
+  .apt-afford-block {
+    background: linear-gradient(135deg, var(--petal) 0%, var(--blush) 100%);
+    border-radius: 16px;
+    padding: 1.75rem 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .apt-afford-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem;
+    color: var(--mocha);
+    margin-bottom: 1.25rem;
+    font-weight: 400;
+    font-style: italic;
+  }
+
+  .apt-afford-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .apt-afford-field label { color: var(--mocha); }
+
+  .apt-afford-result {
+    background: white;
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .apt-afford-result-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+  }
+
+  .apt-afford-stat { display: flex; flex-direction: column; gap: 0.2rem; }
+
+  .apt-afford-stat span {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    color: var(--mocha);
+    line-height: 1;
+    font-weight: 300;
+  }
+
+  .apt-afford-stat small {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+  }
+
+  .apt-afford-note {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-style: italic;
+    border-top: 1px solid var(--petal);
+    padding-top: 0.75rem;
+  }
+
+  .apt-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .apt-section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    color: var(--mocha);
+    font-weight: 400;
+  }
+
+  .apt-add-form {
+    background: var(--petal);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .apt-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .apt-form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+
+  .apt-stars { display: flex; gap: 0.25rem; cursor: pointer; margin-top: 0.3rem; }
+  .apt-stars span { font-size: 1.3rem; color: var(--blush); transition: color 0.15s; }
+  .apt-stars span.lit { color: var(--sand); }
+
+  .apt-card {
+    background: white;
+    border: 1px solid var(--blush);
+    border-radius: 12px;
+    padding: 1.25rem 1.4rem;
+    margin-bottom: 0.75rem;
+    position: relative;
+  }
+
+  .apt-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .apt-card-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.25rem;
+    color: var(--mocha);
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .apt-card-rent {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    color: var(--mocha);
+    white-space: nowrap;
+  }
+
+  .apt-card-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.75rem; }
+
+  .apt-chip {
+    background: var(--petal);
+    color: var(--mocha);
+    font-size: 0.7rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 20px;
+    letter-spacing: 0.03em;
+  }
+
+  .apt-status-badge {
+    display: inline-block;
+    padding: 0.15rem 0.65rem;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+
+  .status-interested { background: #EEF3FF; color: #5B7EC9; }
+  .status-tour { background: #FFF4E0; color: #B07D2E; }
+  .status-toured { background: #EAF4EB; color: var(--success); }
+  .status-applied { background: #F0EAF7; color: #7C5FA0; }
+  .status-rejected { background: var(--petal); color: var(--muted); }
+
+  .apt-card-stars { color: var(--sand); font-size: 0.85rem; letter-spacing: 0.05em; }
+  .apt-card-notes { font-size: 0.8rem; color: var(--muted); font-style: italic; margin-top: 0.5rem; line-height: 1.5; }
+
+  .apt-card-del {
+    position: absolute;
+    top: 1rem; right: 1rem;
+    background: none;
+    border: none;
+    color: var(--blush);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: color 0.2s;
+  }
+
+  .apt-card-del:hover { color: var(--danger); }
+
+  .apt-viewing-add {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .viewing-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.7rem 1rem;
+    background: white;
+    border: 1px solid var(--blush);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    font-size: 0.83rem;
+    flex-wrap: wrap;
+  }
+
+  .viewing-apt { font-weight: 600; color: var(--text); flex: 1; min-width: 120px; }
+  .viewing-date { color: var(--sand); font-size: 0.78rem; }
+  .viewing-contact { color: var(--muted); font-size: 0.78rem; }
+
+  .viewing-done-btn {
+    background: none;
+    border: 1px solid var(--blush);
+    border-radius: 20px;
+    padding: 0.15rem 0.65rem;
+    font-size: 0.68rem;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .viewing-done-btn.done { background: var(--petal); color: var(--success); border-color: var(--success); }
+
+  .apt-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  .apt-checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 8px;
+    margin-bottom: 0.4rem;
+    background: white;
+    border: 1px solid var(--blush);
+    font-size: 0.83rem;
+    transition: background 0.2s;
+  }
+
+  .apt-checklist-item.done { background: var(--petal); border-color: transparent; }
+  .apt-checklist-item.done .item-text { text-decoration: line-through; color: var(--muted); }
+  .apt-checklist-item input[type="checkbox"] { accent-color: var(--mocha); cursor: pointer; flex-shrink: 0; }
+
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">Our <span>Wedding</span></div>
+  <ul class="nav-tabs" id="navTabs">
+    <li><button class="active" onclick="showPage('vision')">✦ Vision</button></li>
+    <li><button onclick="showPage('savings')">Savings</button></li>
+    <li><button onclick="showPage('vendors')">Vendors</button></li>
+    <li><button onclick="showPage('guests')">Guests</button></li>
+    <li><button onclick="showPage('checklist')">Checklist</button></li>
+    <li><button onclick="showPage('notes')">Notes</button></li>
+    <li><button onclick="showPage('honeymoon')">🌴 Honeymoon</button></li>
+    <li><button onclick="showPage('apartment')">🏠 Apartment</button></li>
+  </ul>
+</nav>
+
+<main>
+
+  <!-- VISION BOARD -->
+  <div class="page active" id="page-vision">
+
+    <!-- COUNTDOWN -->
+    <div class="countdown-block" id="countdownBlock">
+      <div class="countdown-eyebrow">The Big Day</div>
+      <div class="countdown-date-row">
+        <input type="date" id="weddingDateInput" onchange="saveWeddingDate()" class="countdown-date-picker" />
+        <label for="weddingDateInput" class="countdown-date-label" id="countdownDateLabel">Set your wedding date →</label>
+      </div>
+      <div class="countdown-tiles" id="countdownTiles" style="display:none">
+        <div class="countdown-tile"><span id="cdDays">0</span><small>days</small></div>
+        <div class="countdown-tile"><span id="cdHours">0</span><small>hours</small></div>
+        <div class="countdown-tile"><span id="cdMinutes">0</span><small>minutes</small></div>
+        <div class="countdown-tile"><span id="cdSeconds">0</span><small>seconds</small></div>
+      </div>
+      <div id="countdownMarried" class="countdown-married" style="display:none">🎉 You're married!</div>
+    </div>
+
+    <h1 class="section-title" style="margin-top:2rem">The <em>Vision</em></h1>
+    <p class="section-sub">Paste an image URL from Pinterest, Google, or anywhere else</p>
+    <div class="vision-add">
+      <input type="url" id="visionUrl" placeholder="https://i.pinimg.com/..." />
+      <input type="text" id="visionNote" placeholder="Note (optional)" style="max-width:220px" />
+      <button class="btn-primary" onclick="addVisionCard()">Add Image</button>
+    </div>
+    <div class="vision-grid" id="visionGrid">
+      <div class="vision-empty" id="visionEmpty">Paste your first image URL to start your vision board</div>
+    </div>
+  </div>
+
+  <!-- SAVINGS -->
+  <div class="page" id="page-savings">
+    <h1 class="section-title"><em>Savings</em> Progress</h1>
+    <p class="section-sub">Track your journey to your wedding goal</p>
+    <div class="savings-hero">
+      <div class="savings-goal-label">Saved so far</div>
+      <div class="savings-amount"><span>$</span><span id="savedDisplay">0</span></div>
+      <div class="savings-of" id="savingsOf">of $0 goal</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+      <div class="progress-pct" id="progressPct">0% there</div>
+    </div>
+    <div class="savings-controls">
+      <div class="savings-card">
+        <label>Total Goal ($)</label>
+        <input type="number" id="goalInput" placeholder="e.g. 15000" oninput="updateSavings()" />
+      </div>
+      <div class="savings-card">
+        <label>Add Deposit ($)</label>
+        <div style="display:flex;gap:0.5rem;align-items:center;margin-top:0.25rem">
+          <input type="number" id="depositInput" placeholder="Amount" style="flex:1" />
+          <button class="btn-primary" onclick="addDeposit()" style="padding:0.5rem 0.9rem">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="savings-card savings-log" id="savingsLog" style="display:none">
+      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:0.75rem">Deposit History</div>
+      <div id="logEntries"></div>
+    </div>
+  </div>
+
+  <!-- VENDORS -->
+  <div class="page" id="page-vendors">
+    <h1 class="section-title">Services & <em>Vendors</em></h1>
+    <p class="section-sub">Everyone who'll make the day happen</p>
+    <div class="vendor-add-form">
+      <input type="text" id="vName" placeholder="Vendor name" />
+      <select id="vCategory">
+        <option value="">Category…</option>
+        <option>Venue</option>
+        <option>Photographer</option>
+        <option>Videographer</option>
+        <option>Catering</option>
+        <option>Florist</option>
+        <option>Music / DJ</option>
+        <option>Hair & Makeup</option>
+        <option>Officiant</option>
+        <option>Transportation</option>
+        <option>Cake / Desserts</option>
+        <option>Attire</option>
+        <option>Other</option>
+      </select>
+      <input type="text" id="vContact" placeholder="Contact (name, phone, email)" />
+      <input type="text" id="vPrice" placeholder="Price / quote" />
+      <input type="url" id="vWebsite" placeholder="Website or social link" />
+      <select id="vStatus">
+        <option value="pending">Pending</option>
+        <option value="booked">Booked ✓</option>
+      </select>
+      <textarea id="vNotes" placeholder="Notes or reviews…"></textarea>
+      <button class="btn-primary" onclick="addVendor()">Add Vendor</button>
+    </div>
+    <div class="vendor-list" id="vendorList">
+      <p style="color:var(--muted);font-style:italic;font-size:0.85rem;text-align:center;padding:2rem">No vendors added yet</p>
+    </div>
+  </div>
+
+  <!-- GUESTS -->
+  <div class="page" id="page-guests">
+    <h1 class="section-title">Guest <em>List</em></h1>
+    <p class="section-sub">Keep track of your people</p>
+    <div class="guest-stats">
+      <div class="guest-stat"><div class="guest-stat-num" id="totalGuests">0</div><div class="guest-stat-label">Invited</div></div>
+      <div class="guest-stat"><div class="guest-stat-num" id="rsvpYes">0</div><div class="guest-stat-label">Coming</div></div>
+      <div class="guest-stat"><div class="guest-stat-num" id="rsvpNo">0</div><div class="guest-stat-label">Declined</div></div>
+      <div class="guest-stat"><div class="guest-stat-num" id="plusOnes">0</div><div class="guest-stat-label">Plus Ones</div></div>
+    </div>
+    <div class="guest-add-form">
+      <input type="text" id="gName" placeholder="Full name" />
+      <input type="text" id="gContact" placeholder="Phone or email" />
+      <select id="gRsvp">
+        <option value="pending">RSVP Pending</option>
+        <option value="yes">Yes ✓</option>
+        <option value="no">No ✗</option>
+      </select>
+      <input type="text" id="gTable" placeholder="Table / seating" />
+      <select id="gPlus">
+        <option value="no">No plus one</option>
+        <option value="yes">Has plus one</option>
+      </select>
+      <div></div>
+      <button class="btn-primary" onclick="addGuest()" style="grid-column:1/-1">Add Guest</button>
+    </div>
+    <table id="guestTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Contact</th>
+          <th>RSVP</th>
+          <th>Table</th>
+          <th>+1</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="guestBody"></tbody>
+    </table>
+  </div>
+
+  <!-- CHECKLIST -->
+  <div class="page" id="page-checklist">
+    <h1 class="section-title">Timeline & <em>Checklist</em></h1>
+    <p class="section-sub">Stay on track, month by month</p>
+    <div class="checklist-add">
+      <input type="text" id="taskText" placeholder="Task…" />
+      <input type="text" id="taskMonth" placeholder="Month (e.g. October)" />
+      <select id="taskCat">
+        <option value="">Category…</option>
+        <option>Venue</option>
+        <option>Attire</option>
+        <option>Food & Drink</option>
+        <option>Photography</option>
+        <option>Flowers</option>
+        <option>Music</option>
+        <option>Invitations</option>
+        <option>Travel</option>
+        <option>Other</option>
+      </select>
+      <button class="btn-primary" onclick="addTask()">Add Task</button>
+    </div>
+    <div id="checklistContainer"></div>
+  </div>
+
+  <!-- NOTES -->
+  <div class="page" id="page-notes">
+    <h1 class="section-title">Ideas & <em>Notes</em></h1>
+    <p class="section-sub">A free space for everything in your head</p>
+    <div class="notes-grid" id="notesGrid">
+      <button class="note-add-btn" onclick="addNote()">+ New note</button>
+    </div>
+  </div>
+
+  <!-- HONEYMOON -->
+  <div class="page" id="page-honeymoon">
+    <h1 class="section-title">🌴 <em>Honeymoon</em></h1>
+    <p class="section-sub">Everything for the trip of a lifetime</p>
+
+    <!-- Destination & Dates + Accommodation -->
+    <div class="hm-two-col">
+
+      <div class="hm-card">
+        <div class="hm-card-title">✈️ Destination & Dates</div>
+        <div class="hm-field-group">
+          <label class="hm-label">Destination</label>
+          <input class="field-line" type="text" id="hmDestination" placeholder="e.g. Playa del Carmen, Mexico" oninput="saveHoneymoon()" />
+        </div>
+        <div class="hm-row">
+          <div class="hm-field-group">
+            <label class="hm-label">Departure</label>
+            <input class="field-line" type="date" id="hmDepart" oninput="saveHoneymoon()" />
+          </div>
+          <div class="hm-field-group">
+            <label class="hm-label">Return</label>
+            <input class="field-line" type="date" id="hmReturn" oninput="saveHoneymoon()" />
+          </div>
+        </div>
+        <div id="hmNights" class="hm-nights"></div>
+      </div>
+
+      <div class="hm-card">
+        <div class="hm-card-title">🏨 Accommodation</div>
+        <div class="hm-field-group">
+          <label class="hm-label">Hotel / Resort</label>
+          <input class="field-line" type="text" id="hmHotel" placeholder="Name" oninput="saveHoneymoon()" />
+        </div>
+        <div class="hm-field-group">
+          <label class="hm-label">Confirmation #</label>
+          <input class="field-line" type="text" id="hmConfirm" placeholder="Booking reference" oninput="saveHoneymoon()" />
+        </div>
+        <div class="hm-field-group">
+          <label class="hm-label">Website / Notes</label>
+          <input class="field-line" type="text" id="hmHotelNotes" placeholder="Link or notes" oninput="saveHoneymoon()" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Budget -->
+    <div class="hm-card" style="margin-bottom:1.5rem">
+      <div class="hm-card-title">💰 Budget</div>
+      <div class="hm-budget-grid">
+        <div>
+          <label class="hm-label">Total Budget ($)</label>
+          <input class="field-line" type="number" id="hmBudget" placeholder="0" oninput="saveHoneymoon(); renderHmBudget()" />
+        </div>
+        <div>
+          <label class="hm-label">Spent So Far ($)</label>
+          <input class="field-line" type="number" id="hmSpent" placeholder="0" oninput="saveHoneymoon(); renderHmBudget()" />
+        </div>
+        <div id="hmBudgetRemaining" style="display:flex;align-items:flex-end;padding-bottom:0.25rem">
+          <span class="hm-nights"></span>
+        </div>
+      </div>
+      <div class="progress-bar-wrap" style="margin-top:1rem">
+        <div class="progress-bar-fill" id="hmBudgetBar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Activities & Packing side by side -->
+    <div class="hm-two-col">
+
+      <div class="hm-card">
+        <div class="hm-card-title">🤿 Activities & Excursions</div>
+        <div class="vision-add" style="margin-bottom:1rem;gap:0.5rem">
+          <input type="text" id="hmActivityInput" placeholder="e.g. Snorkeling at Akumal" style="flex:1" />
+          <button class="btn-primary" style="padding:0.55rem 1rem" onclick="addHmActivity()">+</button>
+        </div>
+        <div id="hmActivitiesList"></div>
+      </div>
+
+      <div class="hm-card">
+        <div class="hm-card-title">🧳 Packing List</div>
+        <div class="vision-add" style="margin-bottom:1rem;gap:0.5rem">
+          <input type="text" id="hmPackInput" placeholder="e.g. Sunscreen" style="flex:1" />
+          <button class="btn-primary" style="padding:0.55rem 1rem" onclick="addHmPack()">+</button>
+        </div>
+        <div id="hmPackList"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- APARTMENT -->
+  <div class="page" id="page-apartment">
+    <h1 class="section-title">🏠 <em>Apartment</em> Hunt</h1>
+    <p class="section-sub">Find your first home together</p>
+
+    <!-- AFFORDABILITY CALCULATOR -->
+    <div class="apt-afford-block">
+      <div class="apt-afford-title">What can we afford?</div>
+      <div class="apt-afford-grid">
+        <div class="apt-afford-field">
+          <label class="hm-label">Combined Monthly Income ($)</label>
+          <input class="field-line" type="number" id="aptIncome" placeholder="e.g. 6000" oninput="calcAfford()" />
+        </div>
+        <div class="apt-afford-field">
+          <label class="hm-label">Other Monthly Expenses ($)</label>
+          <input class="field-line" type="number" id="aptExpenses" placeholder="e.g. 1200" oninput="calcAfford()" />
+        </div>
+        <div class="apt-afford-field">
+          <label class="hm-label">Avg. Utilities ($)</label>
+          <input class="field-line" type="number" id="aptUtilities" placeholder="e.g. 150" oninput="calcAfford()" />
+        </div>
+      </div>
+      <div class="apt-afford-result" id="affordResult" style="display:none">
+        <div class="apt-afford-result-row">
+          <div class="apt-afford-stat">
+            <span id="affordMax"></span>
+            <small>max rent (30% rule)</small>
+          </div>
+          <div class="apt-afford-stat">
+            <span id="affordComfy"></span>
+            <small>comfortable rent</small>
+          </div>
+          <div class="apt-afford-stat">
+            <span id="affordLeft"></span>
+            <small>left after rent + utilities</small>
+          </div>
+        </div>
+        <div class="apt-afford-note" id="affordNote"></div>
+      </div>
+    </div>
+
+    <!-- APARTMENTS LIST + ADD -->
+    <div class="apt-section-header">
+      <h2 class="apt-section-title">Apartments</h2>
+      <button class="btn-primary" onclick="toggleAptForm()" id="aptAddBtn">+ Add Apartment</button>
+    </div>
+
+    <div class="apt-add-form" id="aptAddForm" style="display:none">
+      <div class="apt-form-grid">
+        <div class="apt-form-group" style="grid-column:1/-1">
+          <label class="hm-label">Apartment Name / Address</label>
+          <input class="field-line" type="text" id="aptName" placeholder="e.g. 123 Oak St, Unit 2B" />
+        </div>
+        <div class="apt-form-group">
+          <label class="hm-label">Monthly Rent ($)</label>
+          <input class="field-line" type="number" id="aptRent" placeholder="0" />
+        </div>
+        <div class="apt-form-group">
+          <label class="hm-label">Parking</label>
+          <select class="field-line" id="aptParking">
+            <option value="">Unknown</option>
+            <option value="included">Included</option>
+            <option value="extra">Extra cost</option>
+            <option value="street">Street only</option>
+            <option value="none">No parking</option>
+          </select>
+        </div>
+        <div class="apt-form-group">
+          <label class="hm-label">Distance from Work</label>
+          <input class="field-line" type="text" id="aptDistance" placeholder="e.g. 20 min, 5 miles" />
+        </div>
+        <div class="apt-form-group">
+          <label class="hm-label">Status</label>
+          <select class="field-line" id="aptStatus">
+            <option value="interested">Interested</option>
+            <option value="tour">Tour Scheduled</option>
+            <option value="toured">Toured</option>
+            <option value="applied">Applied</option>
+            <option value="rejected">Passed / Rejected</option>
+          </select>
+        </div>
+        <div class="apt-form-group">
+          <label class="hm-label">Your Rating</label>
+          <div class="apt-stars" id="aptRatingInput">
+            <span onclick="setRating(1)">★</span>
+            <span onclick="setRating(2)">★</span>
+            <span onclick="setRating(3)">★</span>
+            <span onclick="setRating(4)">★</span>
+            <span onclick="setRating(5)">★</span>
+          </div>
+          <input type="hidden" id="aptRatingVal" value="0" />
+        </div>
+        <div class="apt-form-group" style="grid-column:1/-1">
+          <label class="hm-label">Notes</label>
+          <textarea class="field-line" id="aptNotes" placeholder="First impressions, pros, cons…" style="min-height:60px;resize:vertical"></textarea>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.75rem;margin-top:0.5rem">
+        <button class="btn-primary" onclick="addApartment()">Save Apartment</button>
+        <button class="btn-ghost" onclick="toggleAptForm()">Cancel</button>
+      </div>
+    </div>
+
+    <div id="aptList"></div>
+
+    <!-- VIEWINGS -->
+    <div class="apt-section-header" style="margin-top:2.5rem">
+      <h2 class="apt-section-title">Viewings & Tours</h2>
+    </div>
+    <div class="apt-viewing-add">
+      <input class="field-line" type="text" id="viewingApt" placeholder="Apartment name" style="flex:2" />
+      <input class="field-line" type="datetime-local" id="viewingDate" style="flex:2" />
+      <input class="field-line" type="text" id="viewingContact" placeholder="Contact / agent" style="flex:1.5" />
+      <button class="btn-primary" onclick="addViewing()" style="white-space:nowrap">+ Add</button>
+    </div>
+    <div id="viewingList"></div>
+
+    <!-- MUST-HAVES & NICE-TO-HAVES -->
+    <div class="apt-two-col" style="margin-top:2.5rem">
+      <div class="hm-card">
+        <div class="hm-card-title">✅ Must-Haves</div>
+        <div class="vision-add" style="margin-bottom:1rem;gap:0.5rem">
+          <input type="text" id="mustInput" placeholder="e.g. In-unit laundry" style="flex:1" />
+          <button class="btn-primary" style="padding:0.55rem 1rem" onclick="addMust()">+</button>
+        </div>
+        <div id="mustList"></div>
+      </div>
+      <div class="hm-card">
+        <div class="hm-card-title">💛 Nice-to-Haves</div>
+        <div class="vision-add" style="margin-bottom:1rem;gap:0.5rem">
+          <input type="text" id="niceInput" placeholder="e.g. Rooftop access" style="flex:1" />
+          <button class="btn-primary" style="padding:0.55rem 1rem" onclick="addNice()">+</button>
+        </div>
+        <div id="niceList"></div>
+      </div>
+    </div>
+
+    <!-- QUESTIONS TO ASK -->
+    <div style="margin-top:1.5rem">
+      <div class="hm-card">
+        <div class="hm-card-title">❓ Questions to Ask Landlords</div>
+        <div class="vision-add" style="margin-bottom:1rem;gap:0.5rem">
+          <input type="text" id="questionInput" placeholder="e.g. Is heat included? Pet policy?" style="flex:1" />
+          <button class="btn-primary" style="padding:0.55rem 1rem" onclick="addQuestion()">+</button>
+        </div>
+        <div id="questionList"></div>
+      </div>
+    </div>
+
+    <!-- CHECKLIST -->
+    <div style="margin-top:1.5rem">
+      <div class="apt-section-header">
+        <h2 class="apt-section-title">Moving Checklist</h2>
+      </div>
+      <div class="apt-viewing-add">
+        <input class="field-line" type="text" id="aptTaskText" placeholder="Task…" style="flex:2" />
+        <select class="field-line" id="aptTaskCat" style="flex:1">
+          <option value="">Category…</option>
+          <option>Search</option>
+          <option>Documents</option>
+          <option>Moving</option>
+          <option>Setup</option>
+          <option>Other</option>
+        </select>
+        <button class="btn-primary" onclick="addAptTask()">+ Add</button>
+      </div>
+      <div id="aptChecklist"></div>
+    </div>
+
+  </div>
+
+</main>
+
+<script>
+// ── STATE ──
+let state = {
+  vision: [],
+  savings: { goal: 0, saved: 0, log: [] },
+  vendors: [],
+  guests: [],
+  tasks: [],
+  notes: [],
+  weddingDate: '',
+  honeymoon: { destination: '', depart: '', returnDate: '', hotel: '', confirm: '', hotelNotes: '', budget: '', spent: '', activities: [], packing: [] },
+  apartment: { income: '', expenses: '', utilities: '', apartments: [], viewings: [], musts: [], nices: [], questions: [], tasks: [] }
+};
+
+const STORAGE_KEY = 'weddingHub_airy_v1';
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function load() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try { state = JSON.parse(raw); } catch(e) {}
+  }
+  renderAll();
+}
+
+function renderAll() {
+  renderVision();
+  renderSavings();
+  renderVendors();
+  renderGuests();
+  renderChecklist();
+  renderNotes();
+  renderHoneymoon();
+  renderApartment();
+  if (state.weddingDate) startCountdown();
+}
+
+// ── NAV ──
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+// ── VISION ──
+const TILTS = [-1.8, 1.2, -0.7, 2.1, -1.4, 0.9, -2.3, 1.6];
+
+function addVisionCard() {
+  const url = document.getElementById('visionUrl').value.trim();
+  const note = document.getElementById('visionNote').value.trim();
+  if (!url) return;
+  state.vision.push({ url, note, id: Date.now() });
+  document.getElementById('visionUrl').value = '';
+  document.getElementById('visionNote').value = '';
+  save();
+  renderVision();
+}
+
+function renderVision() {
+  const grid = document.getElementById('visionGrid');
+  const empty = document.getElementById('visionEmpty');
+  if (state.vision.length === 0) {
+    grid.innerHTML = '';
+    grid.appendChild(empty);
+    return;
+  }
+  grid.innerHTML = state.vision.map((v, i) => `
+    <div class="vision-card" style="--tilt:${TILTS[i % TILTS.length]}deg">
+      <img src="${v.url}" alt="Vision" onerror="this.style.display='none'" />
+      <div class="vision-card-footer">
+        <input class="vision-card-note" value="${v.note}" placeholder="Add a note…" onchange="updateVisionNote(${v.id}, this.value)" />
+      </div>
+      <button class="vision-delete" onclick="deleteVision(${v.id})">✕</button>
+    </div>
+  `).join('');
+}
+
+function updateVisionNote(id, val) {
+  const v = state.vision.find(x => x.id === id);
+  if (v) v.note = val;
+  save();
+}
+
+function deleteVision(id) {
+  state.vision = state.vision.filter(v => v.id !== id);
+  save();
+  renderVision();
+}
+
+// ── SAVINGS ──
+function addDeposit() {
+  const amt = parseFloat(document.getElementById('depositInput').value);
+  if (!amt || amt <= 0) return;
+  state.savings.saved += amt;
+  state.savings.log.unshift({ amount: amt, date: new Date().toLocaleDateString() });
+  document.getElementById('depositInput').value = '';
+  save();
+  renderSavings();
+}
+
+function updateSavings() {
+  const goal = parseFloat(document.getElementById('goalInput').value) || 0;
+  state.savings.goal = goal;
+  save();
+  renderSavings();
+}
+
+function renderSavings() {
+  const { goal, saved, log } = state.savings;
+  document.getElementById('savedDisplay').textContent = saved.toLocaleString('en-US', {minimumFractionDigits: 0});
+  document.getElementById('savingsOf').textContent = `of $${goal.toLocaleString()} goal`;
+  const pct = goal > 0 ? Math.min(100, (saved / goal * 100)) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct.toFixed(1) + '% there';
+  if (document.getElementById('goalInput')) {
+    document.getElementById('goalInput').value = goal || '';
+  }
+  const logSection = document.getElementById('savingsLog');
+  if (log.length > 0) {
+    logSection.style.display = 'block';
+    document.getElementById('logEntries').innerHTML = log.map(l =>
+      `<div class="log-entry"><span class="log-amount">+$${l.amount.toLocaleString()}</span><span class="log-date">${l.date}</span></div>`
+    ).join('');
+  }
+}
+
+// ── VENDORS ──
+function addVendor() {
+  const name = document.getElementById('vName').value.trim();
+  if (!name) return;
+  state.vendors.push({
+    id: Date.now(),
+    name,
+    category: document.getElementById('vCategory').value,
+    contact: document.getElementById('vContact').value.trim(),
+    price: document.getElementById('vPrice').value.trim(),
+    website: document.getElementById('vWebsite').value.trim(),
+    status: document.getElementById('vStatus').value,
+    notes: document.getElementById('vNotes').value.trim()
+  });
+  ['vName','vContact','vPrice','vWebsite','vNotes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('vCategory').value = '';
+  document.getElementById('vStatus').value = 'pending';
+  save();
+  renderVendors();
+}
+
+function deleteVendor(id) {
+  state.vendors = state.vendors.filter(v => v.id !== id);
+  save();
+  renderVendors();
+}
+
+function renderVendors() {
+  const list = document.getElementById('vendorList');
+  if (state.vendors.length === 0) {
+    list.innerHTML = '<p style="color:var(--muted);font-style:italic;font-size:0.85rem;text-align:center;padding:2rem">No vendors added yet</p>';
+    return;
+  }
+  list.innerHTML = state.vendors.map(v => `
+    <div class="vendor-item">
+      <div class="vendor-status-dot ${v.status}"></div>
+      <div class="vendor-info">
+        <div class="vendor-category">${v.category || 'Vendor'}</div>
+        <div class="vendor-name">${v.name}</div>
+        <div class="vendor-details">
+          ${v.contact ? `📞 ${v.contact}<br>` : ''}
+          ${v.website ? `🔗 <a href="${v.website}" target="_blank" style="color:var(--sand)">${v.website.replace(/https?:\/\//, '')}</a><br>` : ''}
+          ${v.notes ? `<em>${v.notes}</em>` : ''}
+        </div>
+      </div>
+      ${v.price ? `<div class="vendor-price">$${v.price}</div>` : ''}
+      <button class="vendor-delete" onclick="deleteVendor(${v.id})">✕</button>
+    </div>
+  `).join('');
+}
+
+// ── GUESTS ──
+function addGuest() {
+  const name = document.getElementById('gName').value.trim();
+  if (!name) return;
+  state.guests.push({
+    id: Date.now(),
+    name,
+    contact: document.getElementById('gContact').value.trim(),
+    rsvp: document.getElementById('gRsvp').value,
+    table: document.getElementById('gTable').value.trim(),
+    plusOne: document.getElementById('gPlus').value
+  });
+  ['gName','gContact','gTable'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('gRsvp').value = 'pending';
+  document.getElementById('gPlus').value = 'no';
+  save();
+  renderGuests();
+}
+
+function deleteGuest(id) {
+  state.guests = state.guests.filter(g => g.id !== id);
+  save();
+  renderGuests();
+}
+
+function renderGuests() {
+  document.getElementById('totalGuests').textContent = state.guests.length;
+  document.getElementById('rsvpYes').textContent = state.guests.filter(g => g.rsvp === 'yes').length;
+  document.getElementById('rsvpNo').textContent = state.guests.filter(g => g.rsvp === 'no').length;
+  document.getElementById('plusOnes').textContent = state.guests.filter(g => g.plusOne === 'yes').length;
+
+  const body = document.getElementById('guestBody');
+  body.innerHTML = state.guests.map(g => `
+    <tr>
+      <td style="font-weight:500">${g.name}</td>
+      <td style="color:var(--muted)">${g.contact || '—'}</td>
+      <td><span class="rsvp-badge rsvp-${g.rsvp}">${g.rsvp === 'yes' ? 'Coming' : g.rsvp === 'no' ? 'Declined' : 'Pending'}</span></td>
+      <td style="color:var(--muted)">${g.table || '—'}</td>
+      <td>${g.plusOne === 'yes' ? '✓' : '—'}</td>
+      <td><button class="vendor-delete" onclick="deleteGuest(${g.id})">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+// ── CHECKLIST ──
+function addTask() {
+  const text = document.getElementById('taskText').value.trim();
+  const month = document.getElementById('taskMonth').value.trim() || 'General';
+  const cat = document.getElementById('taskCat').value || 'Other';
+  if (!text) return;
+  state.tasks.push({ id: Date.now(), text, month, cat, done: false });
+  document.getElementById('taskText').value = '';
+  document.getElementById('taskMonth').value = '';
+  save();
+  renderChecklist();
+}
+
+function toggleTask(id) {
+  const t = state.tasks.find(t => t.id === id);
+  if (t) t.done = !t.done;
+  save();
+  renderChecklist();
+}
+
+function deleteTask(id) {
+  state.tasks = state.tasks.filter(t => t.id !== id);
+  save();
+  renderChecklist();
+}
+
+function renderChecklist() {
+  const container = document.getElementById('checklistContainer');
+  if (state.tasks.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted);font-style:italic;font-size:0.85rem;text-align:center;padding:2rem">Add your first task above</p>';
+    return;
+  }
+  const byMonth = {};
+  state.tasks.forEach(t => {
+    if (!byMonth[t.month]) byMonth[t.month] = [];
+    byMonth[t.month].push(t);
+  });
+  container.innerHTML = Object.entries(byMonth).map(([month, tasks]) => `
+    <div class="timeline-section">
+      <div class="timeline-month">${month}</div>
+      ${tasks.map(t => `
+        <div class="checklist-item ${t.done ? 'done' : ''}">
+          <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask(${t.id})" />
+          <span class="item-text">${t.text}</span>
+          <span class="item-category">${t.cat}</span>
+          <button class="vendor-delete" onclick="deleteTask(${t.id})" style="margin-left:0.5rem">✕</button>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+// ── NOTES ──
+function addNote() {
+  state.notes.push({ id: Date.now(), text: '' });
+  save();
+  renderNotes();
+}
+
+function updateNote(id, text) {
+  const n = state.notes.find(n => n.id === id);
+  if (n) n.text = text;
+  save();
+}
+
+function deleteNote(id) {
+  state.notes = state.notes.filter(n => n.id !== id);
+  save();
+  renderNotes();
+}
+
+function renderNotes() {
+  const grid = document.getElementById('notesGrid');
+  grid.innerHTML = state.notes.map(n => `
+    <div class="note-card">
+      <button class="note-delete" onclick="deleteNote(${n.id})">✕</button>
+      <textarea placeholder="Write anything…" onchange="updateNote(${n.id}, this.value)">${n.text}</textarea>
+    </div>
+  `).join('') + `<button class="note-add-btn" onclick="addNote()">+ New note</button>`;
+}
+
+
+// ── COUNTDOWN ──
+let countdownInterval = null;
+
+function saveWeddingDate() {
+  const val = document.getElementById('weddingDateInput').value;
+  state.weddingDate = val;
+  save();
+  startCountdown();
+}
+
+function startCountdown() {
+  if (countdownInterval) clearInterval(countdownInterval);
+  const dateStr = state.weddingDate;
+  const label = document.getElementById('countdownDateLabel');
+  const tiles = document.getElementById('countdownTiles');
+  const married = document.getElementById('countdownMarried');
+
+  if (!dateStr) return;
+
+  // Format display date
+  const parts = dateStr.split('-');
+  const displayDate = new Date(parts[0], parts[1] - 1, parts[2]);
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  label.textContent = displayDate.toLocaleDateString('en-US', options);
+  label.classList.add('has-date');
+
+  function tick() {
+    const now = new Date();
+    const target = new Date(parts[0], parts[1] - 1, parts[2]);
+    const diff = target - now;
+
+    if (diff <= 0) {
+      tiles.style.display = 'none';
+      married.style.display = 'block';
+      clearInterval(countdownInterval);
+      return;
+    }
+
+    tiles.style.display = 'flex';
+    married.style.display = 'none';
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    document.getElementById('cdDays').textContent = days;
+    document.getElementById('cdHours').textContent = String(hours).padStart(2, '0');
+    document.getElementById('cdMinutes').textContent = String(minutes).padStart(2, '0');
+    document.getElementById('cdSeconds').textContent = String(seconds).padStart(2, '0');
+  }
+
+  tick();
+  countdownInterval = setInterval(tick, 1000);
+
+  // sync the hidden input
+  document.getElementById('weddingDateInput').value = dateStr;
+}
+
+// Make label click open the date picker
+document.getElementById('countdownDateLabel').addEventListener('click', () => {
+  const inp = document.getElementById('weddingDateInput');
+  inp.style.opacity = '1';
+  inp.style.position = 'static';
+  inp.style.width = 'auto';
+  inp.style.height = 'auto';
+  inp.style.pointerEvents = 'auto';
+  inp.focus();
+  inp.click();
+  setTimeout(() => {
+    inp.style.opacity = '0';
+    inp.style.position = 'absolute';
+    inp.style.width = '0';
+    inp.style.height = '0';
+    inp.style.pointerEvents = 'none';
+  }, 300);
+});
+
+// ── HONEYMOON ──
+function saveHoneymoon() {
+  state.honeymoon = state.honeymoon || {};
+  state.honeymoon.destination = document.getElementById('hmDestination').value;
+  state.honeymoon.depart = document.getElementById('hmDepart').value;
+  state.honeymoon.returnDate = document.getElementById('hmReturn').value;
+  state.honeymoon.hotel = document.getElementById('hmHotel').value;
+  state.honeymoon.confirm = document.getElementById('hmConfirm').value;
+  state.honeymoon.hotelNotes = document.getElementById('hmHotelNotes').value;
+  state.honeymoon.budget = document.getElementById('hmBudget').value;
+  state.honeymoon.spent = document.getElementById('hmSpent').value;
+  save();
+
+  // Nights calculation
+  const d = document.getElementById('hmDepart').value;
+  const r = document.getElementById('hmReturn').value;
+  const nightsEl = document.getElementById('hmNights');
+  if (d && r) {
+    const nights = Math.round((new Date(r) - new Date(d)) / (1000 * 60 * 60 * 24));
+    nightsEl.textContent = nights > 0 ? `${nights} nights` : '';
+  }
+
+  renderHmBudget();
+}
+
+function renderHmBudget() {
+  const budget = parseFloat(document.getElementById('hmBudget').value) || 0;
+  const spent = parseFloat(document.getElementById('hmSpent').value) || 0;
+  const remaining = budget - spent;
+  const pct = budget > 0 ? Math.min(100, spent / budget * 100) : 0;
+  document.getElementById('hmBudgetBar').style.width = pct + '%';
+  document.getElementById('hmBudgetRemaining').innerHTML = budget > 0
+    ? `<span class="hm-nights">$${remaining.toLocaleString()} remaining</span>`
+    : '';
+}
+
+function addHmActivity() {
+  const val = document.getElementById('hmActivityInput').value.trim();
+  if (!val) return;
+  state.honeymoon = state.honeymoon || {};
+  state.honeymoon.activities = state.honeymoon.activities || [];
+  state.honeymoon.activities.push({ id: Date.now(), text: val, done: false });
+  document.getElementById('hmActivityInput').value = '';
+  save(); renderHoneymoon();
+}
+
+function toggleHmActivity(id) {
+  const item = state.honeymoon.activities.find(a => a.id === id);
+  if (item) { item.done = !item.done; save(); renderHoneymoon(); }
+}
+
+function deleteHmActivity(id) {
+  state.honeymoon.activities = state.honeymoon.activities.filter(a => a.id !== id);
+  save(); renderHoneymoon();
+}
+
+function addHmPack() {
+  const val = document.getElementById('hmPackInput').value.trim();
+  if (!val) return;
+  state.honeymoon = state.honeymoon || {};
+  state.honeymoon.packing = state.honeymoon.packing || [];
+  state.honeymoon.packing.push({ id: Date.now(), text: val, done: false });
+  document.getElementById('hmPackInput').value = '';
+  save(); renderHoneymoon();
+}
+
+function toggleHmPack(id) {
+  const item = state.honeymoon.packing.find(p => p.id === id);
+  if (item) { item.done = !item.done; save(); renderHoneymoon(); }
+}
+
+function deleteHmPack(id) {
+  state.honeymoon.packing = state.honeymoon.packing.filter(p => p.id !== id);
+  save(); renderHoneymoon();
+}
+
+function renderHoneymoon() {
+  const hm = state.honeymoon || {};
+
+  // Restore fields
+  if (hm.destination) document.getElementById('hmDestination').value = hm.destination;
+  if (hm.depart) document.getElementById('hmDepart').value = hm.depart;
+  if (hm.returnDate) document.getElementById('hmReturn').value = hm.returnDate;
+  if (hm.hotel) document.getElementById('hmHotel').value = hm.hotel;
+  if (hm.confirm) document.getElementById('hmConfirm').value = hm.confirm;
+  if (hm.hotelNotes) document.getElementById('hmHotelNotes').value = hm.hotelNotes;
+  if (hm.budget) document.getElementById('hmBudget').value = hm.budget;
+  if (hm.spent) document.getElementById('hmSpent').value = hm.spent;
+
+  // Nights
+  if (hm.depart && hm.returnDate) {
+    const nights = Math.round((new Date(hm.returnDate) - new Date(hm.depart)) / (1000 * 60 * 60 * 24));
+    if (nights > 0) document.getElementById('hmNights').textContent = `${nights} nights`;
+  }
+
+  renderHmBudget();
+
+  // Activities
+  const acts = hm.activities || [];
+  document.getElementById('hmActivitiesList').innerHTML = acts.length
+    ? acts.map(a => `
+        <div class="hm-list-item ${a.done ? 'checked' : ''}">
+          <input type="checkbox" ${a.done ? 'checked' : ''} onchange="toggleHmActivity(${a.id})" />
+          <span class="hm-item-text">${a.text}</span>
+          <button class="hm-item-del" onclick="deleteHmActivity(${a.id})">✕</button>
+        </div>`).join('')
+    : '<p style="color:var(--muted);font-size:0.8rem;font-style:italic;padding:0.5rem 0">No activities yet</p>';
+
+  // Packing
+  const packs = hm.packing || [];
+  document.getElementById('hmPackList').innerHTML = packs.length
+    ? packs.map(p => `
+        <div class="hm-list-item ${p.done ? 'checked' : ''}">
+          <input type="checkbox" ${p.done ? 'checked' : ''} onchange="toggleHmPack(${p.id})" />
+          <span class="hm-item-text">${p.text}</span>
+          <button class="hm-item-del" onclick="deleteHmPack(${p.id})">✕</button>
+        </div>`).join('')
+    : '<p style="color:var(--muted);font-size:0.8rem;font-style:italic;padding:0.5rem 0">Nothing packed yet</p>';
+}
+
+// ── APARTMENT ──
+let aptRating = 0;
+
+function setRating(n) {
+  aptRating = n;
+  document.getElementById('aptRatingVal').value = n;
+  document.querySelectorAll('#aptRatingInput span').forEach((s, i) => {
+    s.classList.toggle('lit', i < n);
+  });
+}
+
+function toggleAptForm() {
+  const form = document.getElementById('aptAddForm');
+  const btn = document.getElementById('aptAddBtn');
+  const visible = form.style.display !== 'none';
+  form.style.display = visible ? 'none' : 'block';
+  btn.textContent = visible ? '+ Add Apartment' : '✕ Cancel';
+  if (!visible) { aptRating = 0; setRating(0); }
+}
+
+function calcAfford() {
+  const income = parseFloat(document.getElementById('aptIncome').value) || 0;
+  const expenses = parseFloat(document.getElementById('aptExpenses').value) || 0;
+  const utilities = parseFloat(document.getElementById('aptUtilities').value) || 0;
+  state.apartment.income = income;
+  state.apartment.expenses = expenses;
+  state.apartment.utilities = utilities;
+  save();
+  if (!income) { document.getElementById('affordResult').style.display = 'none'; return; }
+  const maxRent = Math.round(income * 0.30);
+  const comfyRent = Math.round(income * 0.25);
+  const leftover = income - comfyRent - expenses - utilities;
+  document.getElementById('affordResult').style.display = 'block';
+  document.getElementById('affordMax').textContent = '$' + maxRent.toLocaleString();
+  document.getElementById('affordComfy').textContent = '$' + comfyRent.toLocaleString();
+  document.getElementById('affordLeft').textContent = '$' + Math.max(0, leftover).toLocaleString();
+  let note = leftover < 500
+    ? '⚠️ Tight margin — consider a lower rent target or reducing other expenses.'
+    : leftover < 1000
+    ? 'Workable, but keep an eye on discretionary spending.'
+    : '✓ Comfortable — you have solid breathing room at this income level.';
+  document.getElementById('affordNote').textContent = note;
+}
+
+function addApartment() {
+  const name = document.getElementById('aptName').value.trim();
+  if (!name) return;
+  state.apartment.apartments.push({
+    id: Date.now(), name,
+    rent: document.getElementById('aptRent').value,
+    parking: document.getElementById('aptParking').value,
+    distance: document.getElementById('aptDistance').value.trim(),
+    status: document.getElementById('aptStatus').value,
+    rating: aptRating,
+    notes: document.getElementById('aptNotes').value.trim()
+  });
+  ['aptName','aptRent','aptDistance','aptNotes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('aptParking').value = '';
+  document.getElementById('aptStatus').value = 'interested';
+  aptRating = 0; setRating(0);
+  toggleAptForm();
+  save(); renderApartment();
+}
+
+function deleteApartment(id) {
+  state.apartment.apartments = state.apartment.apartments.filter(a => a.id !== id);
+  save(); renderApartment();
+}
+
+const PARKING_LABELS = { included: 'Parking incl.', extra: 'Parking +$', street: 'Street parking', none: 'No parking', '': '' };
+const STATUS_LABELS = { interested: 'Interested', tour: 'Tour Scheduled', toured: 'Toured', applied: 'Applied', rejected: 'Passed' };
+
+function renderApartment() {
+  const apt = state.apartment;
+  if (apt.income) { document.getElementById('aptIncome').value = apt.income; }
+  if (apt.expenses) { document.getElementById('aptExpenses').value = apt.expenses; }
+  if (apt.utilities) { document.getElementById('aptUtilities').value = apt.utilities; }
+  if (apt.income) calcAfford();
+
+  document.getElementById('aptList').innerHTML = apt.apartments.length
+    ? apt.apartments.map(a => `
+      <div class="apt-card">
+        <button class="apt-card-del" onclick="deleteApartment(${a.id})">✕</button>
+        <div class="apt-card-header">
+          <div>
+            <div class="apt-card-name">${a.name}</div>
+            <div class="apt-card-stars">${'★'.repeat(a.rating)}${'☆'.repeat(5 - a.rating)}</div>
+          </div>
+          ${a.rent ? `<div class="apt-card-rent">$${Number(a.rent).toLocaleString()}<span style="font-size:0.9rem;color:var(--muted)">/mo</span></div>` : ''}
+        </div>
+        <div class="apt-card-chips">
+          <span class="apt-status-badge status-${a.status}">${STATUS_LABELS[a.status]}</span>
+          ${a.parking ? `<span class="apt-chip">${PARKING_LABELS[a.parking]}</span>` : ''}
+          ${a.distance ? `<span class="apt-chip">📍 ${a.distance}</span>` : ''}
+        </div>
+        ${a.notes ? `<div class="apt-card-notes">${a.notes}</div>` : ''}
+      </div>`).join('')
+    : '<p style="color:var(--muted);font-style:italic;font-size:0.85rem;text-align:center;padding:2rem 0">No apartments yet — click "+ Add Apartment" to start</p>';
+
+  document.getElementById('viewingList').innerHTML = apt.viewings.length
+    ? apt.viewings.map(v => {
+        const d = v.date ? new Date(v.date).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+        return `<div class="viewing-item">
+          <span class="viewing-apt">${v.apt}</span>
+          ${d ? `<span class="viewing-date">📅 ${d}</span>` : ''}
+          ${v.contact ? `<span class="viewing-contact">${v.contact}</span>` : ''}
+          <button class="viewing-done-btn ${v.done ? 'done' : ''}" onclick="toggleViewing(${v.id})">${v.done ? '✓ Done' : 'Mark done'}</button>
+          <button class="vendor-delete" onclick="deleteViewing(${v.id})">✕</button>
+        </div>`;
+      }).join('')
+    : '<p style="color:var(--muted);font-style:italic;font-size:0.83rem;padding:1rem 0">No viewings scheduled</p>';
+
+  renderAptList('mustList', apt.musts, 'toggleMust', 'deleteMust');
+  renderAptList('niceList', apt.nices, 'toggleNice', 'deleteNice');
+  renderAptList('questionList', apt.questions, 'toggleQuestion', 'deleteQuestion');
+
+  document.getElementById('aptChecklist').innerHTML = apt.tasks.length
+    ? apt.tasks.map(t => `
+      <div class="apt-checklist-item ${t.done ? 'done' : ''}">
+        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleAptTask(${t.id})" />
+        <span class="item-text">${t.text}</span>
+        <span class="item-category">${t.cat}</span>
+        <button class="vendor-delete" onclick="deleteAptTask(${t.id})" style="margin-left:0.5rem">✕</button>
+      </div>`).join('')
+    : '<p style="color:var(--muted);font-style:italic;font-size:0.83rem;padding:1rem 0">No tasks yet</p>';
+}
+
+function renderAptList(containerId, items, toggleFn, deleteFn) {
+  document.getElementById(containerId).innerHTML = items.length
+    ? items.map(i => `
+      <div class="hm-list-item ${i.done ? 'checked' : ''}">
+        <input type="checkbox" ${i.done ? 'checked' : ''} onchange="${toggleFn}(${i.id})" />
+        <span class="hm-item-text">${i.text}</span>
+        <button class="hm-item-del" onclick="${deleteFn}(${i.id})">✕</button>
+      </div>`).join('')
+    : '<p style="color:var(--muted);font-size:0.78rem;font-style:italic;padding:0.5rem 0">Nothing added yet</p>';
+}
+
+function addViewing() {
+  const apt = document.getElementById('viewingApt').value.trim();
+  if (!apt) return;
+  state.apartment.viewings.push({ id: Date.now(), apt, date: document.getElementById('viewingDate').value, contact: document.getElementById('viewingContact').value.trim(), done: false });
+  ['viewingApt','viewingDate','viewingContact'].forEach(id => document.getElementById(id).value = '');
+  save(); renderApartment();
+}
+
+function toggleViewing(id) {
+  const v = state.apartment.viewings.find(v => v.id === id);
+  if (v) { v.done = !v.done; save(); renderApartment(); }
+}
+
+function deleteViewing(id) {
+  state.apartment.viewings = state.apartment.viewings.filter(v => v.id !== id);
+  save(); renderApartment();
+}
+
+function addMust() {
+  const val = document.getElementById('mustInput').value.trim();
+  if (!val) return;
+  state.apartment.musts.push({ id: Date.now(), text: val, done: false });
+  document.getElementById('mustInput').value = '';
+  save(); renderApartment();
+}
+function toggleMust(id) { const i = state.apartment.musts.find(x => x.id === id); if (i) { i.done = !i.done; save(); renderApartment(); } }
+function deleteMust(id) { state.apartment.musts = state.apartment.musts.filter(x => x.id !== id); save(); renderApartment(); }
+
+function addNice() {
+  const val = document.getElementById('niceInput').value.trim();
+  if (!val) return;
+  state.apartment.nices.push({ id: Date.now(), text: val, done: false });
+  document.getElementById('niceInput').value = '';
+  save(); renderApartment();
+}
+function toggleNice(id) { const i = state.apartment.nices.find(x => x.id === id); if (i) { i.done = !i.done; save(); renderApartment(); } }
+function deleteNice(id) { state.apartment.nices = state.apartment.nices.filter(x => x.id !== id); save(); renderApartment(); }
+
+function addQuestion() {
+  const val = document.getElementById('questionInput').value.trim();
+  if (!val) return;
+  state.apartment.questions.push({ id: Date.now(), text: val, done: false });
+  document.getElementById('questionInput').value = '';
+  save(); renderApartment();
+}
+function toggleQuestion(id) { const i = state.apartment.questions.find(x => x.id === id); if (i) { i.done = !i.done; save(); renderApartment(); } }
+function deleteQuestion(id) { state.apartment.questions = state.apartment.questions.filter(x => x.id !== id); save(); renderApartment(); }
+
+function addAptTask() {
+  const text = document.getElementById('aptTaskText').value.trim();
+  if (!text) return;
+  state.apartment.tasks.push({ id: Date.now(), text, cat: document.getElementById('aptTaskCat').value || 'Other', done: false });
+  document.getElementById('aptTaskText').value = '';
+  save(); renderApartment();
+}
+function toggleAptTask(id) { const t = state.apartment.tasks.find(t => t.id === id); if (t) { t.done = !t.done; save(); renderApartment(); } }
+function deleteAptTask(id) { state.apartment.tasks = state.apartment.tasks.filter(t => t.id !== id); save(); renderApartment(); }
+
+// ── PRE-POPULATED WEDDING CHECKLIST ──
+const WEDDING_TASKS = [
+  // NOW — ASAP (June–July 2026)
+  { text: "Decide on wedding date — October or April", month: "Now — June/July", cat: "Planning" },
+  { text: "Set your all-in budget and open a HYSA savings account", month: "Now — June/July", cat: "Budget" },
+  { text: "Start saving toward your wedding goal", month: "Now — June/July", cat: "Budget" },
+  { text: "Confirm pastor's availability for your chosen date", month: "Now — June/July", cat: "Officiant" },
+  { text: "Draft your full guest list", month: "Now — June/July", cat: "Guests" },
+  { text: "Decide on ceremony venue — church, outdoor space, rented hall, or other", month: "Now — June/July", cat: "Venue" },
+  { text: "Decide on brunch reception venue — home, rented space, or restaurant private room", month: "Now — June/July", cat: "Reception" },
+  { text: "DECIDE: Will ceremony and reception be the same day and location?", month: "Now — June/July", cat: "Planning" },
+  { text: "DECIDE: Rings — budget, style, where to purchase", month: "Now — June/July", cat: "Planning" },
+  { text: "Start researching engagement photographers — consider booking your wedding photographer first so they can do both", month: "Now — June/July", cat: "Engagement Shoot" },
+  { text: "Scout engagement shoot locations — meaningful spots, parks, city backdrops, your neighborhood", month: "Now — June/July", cat: "Engagement Shoot" },
+  { text: "DECIDE: Use wedding photographer for engagement shoot or hire separately?", month: "Now — June/July", cat: "Engagement Shoot" },
+
+  // 8–9 MONTHS OUT (July–August 2026)
+  { text: "Tour and book ceremony venue — pay deposit", month: "8–9 Months Out", cat: "Venue" },
+  { text: "Tour and book brunch reception venue — pay deposit", month: "8–9 Months Out", cat: "Venue" },
+  { text: "Book Philadelphia photographer — ask if engagement shoot is included or available as add-on", month: "8–9 Months Out", cat: "Photography" },
+  { text: "Schedule engagement photo shoot — must happen before save-the-dates go out", month: "8–9 Months Out", cat: "Engagement Shoot" },
+  { text: "Plan engagement shoot outfits — coordinated but not matching", month: "8–9 Months Out", cat: "Engagement Shoot" },
+  { text: "Receive and select engagement photos for save-the-dates", month: "8–9 Months Out", cat: "Engagement Shoot" },
+  { text: "Book Philadelphia videographer", month: "8–9 Months Out", cat: "Photography" },
+  { text: "Book Christian DJ for reception", month: "8–9 Months Out", cat: "Music" },
+  { text: "Research and book drop-off catering vendor for brunch reception", month: "8–9 Months Out", cat: "Reception" },
+  { text: "Order custom tiramisu bowl — call Italian bakeries (Termini Bros at Reading Terminal is a strong lead)", month: "8–9 Months Out", cat: "Reception" },
+  { text: "Start wedding dress shopping — budget ~$900–$1,800 simple/minimalist style", month: "8–9 Months Out", cat: "Attire" },
+  { text: "Research linen suit options for groom (own or rent)", month: "8–9 Months Out", cat: "Attire" },
+  { text: "Research Playa del Carmen hotels — 3 to 5 nights, book early for best rates", month: "8–9 Months Out", cat: "Honeymoon" },
+  { text: "Book round-trip flights to Playa del Carmen", month: "8–9 Months Out", cat: "Honeymoon" },
+
+  // 6–7 MONTHS OUT (September–October 2026)
+  { text: "Send save-the-dates to all guests", month: "6–7 Months Out", cat: "Guests" },
+  { text: "Order / purchase wedding dress — allow 4–6 months for alterations", month: "6–7 Months Out", cat: "Attire" },
+  { text: "Book florist — minimalist bouquet + boutonniere only", month: "6–7 Months Out", cat: "Florals" },
+  { text: "Book hair & makeup artist for wedding day", month: "6–7 Months Out", cat: "Attire" },
+  { text: "Book Playa del Carmen hotel — pay deposit", month: "6–7 Months Out", cat: "Honeymoon" },
+  { text: "Discuss vows with pastor — traditional or personal written vows", month: "6–7 Months Out", cat: "Ceremony" },
+  { text: "Choose ceremony music / playlist with pastor", month: "6–7 Months Out", cat: "Ceremony" },
+  { text: "Decide on ceremony décor — venue style, minimal accents, florals placement", month: "6–7 Months Out", cat: "Ceremony" },
+  { text: "Set RSVP deadline for guests (recommend 6–8 weeks before wedding)", month: "6–7 Months Out", cat: "Guests" },
+
+  // 4–5 MONTHS OUT (November–December 2026)
+  { text: "Apply for Philadelphia marriage license — both in person, City Hall Room 413", month: "4–5 Months Out", cat: "Admin" },
+  { text: "Bring: cash or money order for $90 fee + photo ID + Social Security card", month: "4–5 Months Out", cat: "Admin" },
+  { text: "Note: 3-day waiting period after issue, valid for 60 days — time it right", month: "4–5 Months Out", cat: "Admin" },
+  { text: "First dress fitting / alterations appointment", month: "4–5 Months Out", cat: "Attire" },
+  { text: "Purchase wedding shoes and accessories", month: "4–5 Months Out", cat: "Attire" },
+  { text: "Finalize brunch guest count and confirm with caterer", month: "4–5 Months Out", cat: "Guests" },
+  { text: "Decide on brunch reception décor — simple, no-fuss", month: "4–5 Months Out", cat: "Reception" },
+  { text: "Create seating / table plan for brunch reception", month: "4–5 Months Out", cat: "Guests" },
+  { text: "Research and purchase wedding rings", month: "4–5 Months Out", cat: "Planning" },
+  { text: "Start honeymoon packing list", month: "4–5 Months Out", cat: "Honeymoon" },
+  { text: "Check passport validity — both must be valid 6 months beyond return date", month: "4–5 Months Out", cat: "Travel" },
+
+  // 2–3 MONTHS OUT (January–February 2027)
+  { text: "Second / final dress fitting", month: "2–3 Months Out", cat: "Attire" },
+  { text: "Confirm all vendor bookings — photographer, videographer, DJ, florist, caterer, hair/makeup", month: "2–3 Months Out", cat: "Planning" },
+  { text: "Confirm tiramisu bowl order — quantity, pickup or delivery, timing", month: "2–3 Months Out", cat: "Reception" },
+  { text: "Write personal vows (if doing written vows)", month: "2–3 Months Out", cat: "Ceremony" },
+  { text: "Create ceremony program / order of service with pastor", month: "2–3 Months Out", cat: "Ceremony" },
+  { text: "Create shot list for photographer", month: "2–3 Months Out", cat: "Photography" },
+  { text: "Create music do's and don'ts list for DJ", month: "2–3 Months Out", cat: "Music" },
+  { text: "Confirm Playa del Carmen hotel and all honeymoon bookings", month: "2–3 Months Out", cat: "Honeymoon" },
+  { text: "Research Playa del Carmen activities — cenotes, excursions, restaurants", month: "2–3 Months Out", cat: "Honeymoon" },
+  { text: "Prepare vendor tip envelopes", month: "2–3 Months Out", cat: "Budget" },
+  { text: "Send wedding invitations with RSVP card or link", month: "2–3 Months Out", cat: "Guests" },
+
+  // 1 MONTH OUT (March 2027)
+  { text: "Apply for Philadelphia marriage license if not done — watch the 3-day wait and 60-day window", month: "1 Month Out", cat: "Admin" },
+  { text: "Confirm catering delivery time and brunch reception logistics", month: "1 Month Out", cat: "Reception" },
+  { text: "Confirm tiramisu bowl pickup or delivery day and time", month: "1 Month Out", cat: "Reception" },
+  { text: "Groom haircut + grooming appointment", month: "1 Month Out", cat: "Attire" },
+  { text: "Send final reminder to guests with any day-of details", month: "1 Month Out", cat: "Guests" },
+  { text: "Confirm transportation / parking plan for wedding day", month: "1 Month Out", cat: "Planning" },
+  { text: "Pack honeymoon bags", month: "1 Month Out", cat: "Honeymoon" },
+  { text: "Arrange someone to manage brunch reception setup while you're at ceremony", month: "1 Month Out", cat: "Reception" },
+  { text: "Final payment to all vendors", month: "1 Month Out", cat: "Budget" },
+
+  // THINGS TO RESEARCH & DECIDE
+  { text: "DECIDE: October vs April — consider weather, venue availability, and budget differences by season", month: "Things to Research & Decide", cat: "Planning" },
+  { text: "DECIDE: How many people — ceremony only vs ceremony + brunch, or all to both", month: "Things to Research & Decide", cat: "Guests" },
+  { text: "DECIDE: Honeymoon — 3 nights vs 5 nights in Playa del Carmen", month: "Things to Research & Decide", cat: "Honeymoon" },
+  { text: "DECIDE: Brunch menu — confirm what drop-off catering vendors in your area offer", month: "Things to Research & Decide", cat: "Reception" },
+  { text: "RESEARCH: Ceremony venues in Philadelphia that work for a faith-based wedding (church, chapel, garden)", month: "Things to Research & Decide", cat: "Venue" },
+  { text: "RESEARCH: Travel insurance for Playa del Carmen honeymoon", month: "Things to Research & Decide", cat: "Travel" },
+  { text: "RESEARCH: Mexico entry requirements — passport, tourist card (FMM), travel health insurance", month: "Things to Research & Decide", cat: "Travel" },
+  { text: "RESEARCH: Playa del Carmen safe zones and hotel recommendations within budget", month: "Things to Research & Decide", cat: "Honeymoon" },
+  { text: "RESEARCH: Pennsylvania name change process after marriage (Social Security, DMV, passport)", month: "Things to Research & Decide", cat: "Admin" },
+];
+
+function seedChecklist() {
+  // Always replace tasks to reflect updated list (remove DR tasks)
+  const hasOldDRTasks = state.tasks.some(t => t.text && t.text.includes('DR'));
+  const missingEngagement = !state.tasks.some(t => t.cat === 'Engagement Shoot');
+  if (state.tasks.length === 0 || hasOldDRTasks || missingEngagement) {
+    state.tasks = WEDDING_TASKS.map((t, i) => ({
+      id: Date.now() + i,
+      text: t.text,
+      month: t.month,
+      cat: t.cat,
+      done: false
+    }));
+    save();
+  }
+}
+
+load();
+seedChecklist();
+renderChecklist();
+
+</script>
+</body>
+</html>
