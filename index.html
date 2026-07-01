@@ -481,8 +481,15 @@
   .venue-hint {
     font-size:0.71rem; color:var(--muted); padding:5px 14px;
     background:rgba(201,169,138,0.08); border-bottom:1px solid var(--petal);
-    display:flex; align-items:center; justify-content:space-between;
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
   }
+  .shuffle-btn {
+    padding:3px 11px; border-radius:6px; border:1.5px solid var(--sand);
+    background:white; cursor:pointer; font-size:0.72rem; font-family:inherit;
+    color:var(--mocha); font-weight:500; transition:all 0.15s; white-space:nowrap;
+    flex-shrink:0;
+  }
+  .shuffle-btn:hover { background:var(--petal); border-color:var(--mocha); }
   #venueMap { width:100%; display:block; cursor:default; touch-action:none; user-select:none; }
   .venue-seat-panel {
     background:white; border:1.5px solid var(--sand); border-radius:12px;
@@ -1737,7 +1744,10 @@
       <div class="venue-wrap">
         <div class="venue-hint">
           <span>Click a table to assign guests · Drag to rearrange</span>
-          <span id="venueCapacity"></span>
+          <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+            <span id="venueCapacity"></span>
+            <button class="shuffle-btn" onclick="shuffleSeating()">🔀 Shuffle</button>
+          </div>
         </div>
         <svg id="venueMap" viewBox="0 0 800 560" xmlns="http://www.w3.org/2000/svg"
           onmousemove="mapDragMove(event)" onmouseup="mapDragEnd()" onmouseleave="mapDragEnd()"
@@ -2802,6 +2812,38 @@ function unassignGuest(id) {
   renderGuests();
   renderSeatPanel();
   renderVenueMap();
+}
+
+function shuffleSeating() {
+  if (!state.tables.length) { toast('Add tables before shuffling'); return; }
+  if (!state.guests.length) { toast('No guests to assign'); return; }
+  if (!confirm('Randomly assign all guests to seats? This will replace current assignments.')) return;
+
+  // Build every available seat slot
+  const slots = [];
+  state.tables.forEach(tbl => {
+    const n = Math.max(1, parseInt(tbl.seats) || 8);
+    for (let i = 1; i <= n; i++) slots.push({ table: tbl.name, chair: String(i) });
+  });
+
+  // Fisher-Yates shuffle of slots
+  for (let i = slots.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [slots[i], slots[j]] = [slots[j], slots[i]];
+  }
+
+  // Clear then assign each guest a random slot
+  state.guests.forEach((g, i) => {
+    g.table = i < slots.length ? slots[i].table : '';
+    g.chair  = i < slots.length ? slots[i].chair  : '';
+  });
+
+  save();
+  renderGuests();
+  renderVenueMap();
+  if (selectedTableId) renderSeatPanel();
+  const placed = Math.min(state.guests.length, slots.length);
+  toast(`${placed} guest${placed !== 1 ? 's' : ''} shuffled across ${state.tables.length} table${state.tables.length !== 1 ? 's' : ''}`);
 }
 
 // ── CHECKLIST ──
