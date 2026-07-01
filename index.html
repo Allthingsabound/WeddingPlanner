@@ -443,69 +443,117 @@
   .rsvp-pending { background: var(--petal); color: var(--muted); }
 
   /* ── CHECKLIST ── */
-  .timeline-section { margin-bottom: 2.5rem; }
-
-  .timeline-month {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.3rem;
-    color: var(--mocha);
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+  /* ── CHECKLIST (4-column kanban) ── */
+  .cl-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.1rem;
+    align-items: start;
   }
+  @media (max-width: 960px) { .cl-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 520px) { .cl-grid { grid-template-columns: 1fr; } }
 
-  .timeline-month::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--blush);
-  }
-
-  .checklist-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.6rem 0.9rem;
-    border-radius: 8px;
-    margin-bottom: 0.4rem;
+  .cl-col {
     background: white;
+    border-radius: var(--radius, 14px);
     border: 1px solid var(--blush);
-    transition: background 0.2s;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .cl-col-hdr {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--blush);
+  }
+  .cl-col[data-bucket="To Do"]   .cl-col-hdr { background: rgba(201,169,138,0.08); }
+  .cl-col[data-bucket="To Book"] .cl-col-hdr { background: rgba(91,126,201,0.07); }
+  .cl-col[data-bucket="To Buy"]  .cl-col-hdr { background: rgba(122,158,126,0.08); }
+  .cl-col[data-bucket="To DIY"]  .cl-col-hdr { background: rgba(201,123,107,0.08); }
+
+  .cl-col-icon { font-size: 0.95rem; flex-shrink: 0; }
+  .cl-col-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    flex: 1;
+    color: var(--mocha);
+  }
+  .cl-col[data-bucket="To Book"] .cl-col-title { color: #3B5EA0; }
+  .cl-col[data-bucket="To Buy"]  .cl-col-title { color: #3D7A52; }
+  .cl-col[data-bucket="To DIY"]  .cl-col-title { color: #9A4A35; }
+
+  .cl-col-count {
+    background: var(--petal);
+    color: var(--muted);
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.12rem 0.55rem;
+    border-radius: 20px;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
   }
 
-  .checklist-item.done { background: var(--petal); border-color: transparent; }
-  .checklist-item.done .item-text { text-decoration: line-through; color: var(--muted); }
-
-  .checklist-item input[type="checkbox"] {
-    accent-color: var(--mocha);
-    width: 15px; height: 15px;
-    cursor: pointer;
-    flex-shrink: 0;
+  .cl-items { flex: 1; }
+  .cl-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    padding: 0.55rem 1rem;
+    border-bottom: 1px solid var(--petal);
+    font-size: 0.81rem;
+    line-height: 1.45;
+    transition: background 0.15s;
   }
+  .cl-item:last-child { border-bottom: none; }
+  .cl-item:hover { background: var(--petal); }
+  .cl-item.done { opacity: 0.5; }
+  .cl-item.done .cl-item-text { text-decoration: line-through; color: var(--muted); }
+  .cl-item input[type="checkbox"] { accent-color: var(--mocha); cursor: pointer; flex-shrink: 0; margin-top: 3px; }
+  .cl-item-text { flex: 1; color: var(--text); }
+  .cl-item-month { font-size: 0.63rem; color: var(--sand); letter-spacing: 0.04em; text-transform: uppercase; display: block; margin-top: 2px; }
+  .cl-item-del {
+    background: none; border: none; cursor: pointer;
+    color: var(--blush); font-size: 0.72rem;
+    padding: 0; flex-shrink: 0; opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+    margin-top: 3px;
+  }
+  .cl-item:hover .cl-item-del { opacity: 1; }
+  .cl-item-del:hover { color: var(--danger); }
+
+  .cl-add-row {
+    display: flex;
+    gap: 0.4rem;
+    padding: 0.7rem 0.85rem;
+    border-top: 1px solid var(--petal);
+  }
+  .cl-input {
+    flex: 1;
+    border: 1px solid var(--blush);
+    border-radius: 8px;
+    padding: 0.42rem 0.7rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    background: var(--warm-white);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .cl-input:focus { border-color: var(--sand); }
+  .cl-add-btn {
+    background: var(--mocha); color: white; border: none;
+    border-radius: 8px; width: 30px; height: 30px;
+    font-size: 1.1rem; cursor: pointer; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s; line-height: 1;
+  }
+  .cl-add-btn:hover { background: var(--deep); }
 
   .item-text { font-size: 0.85rem; flex: 1; }
   .item-category { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sand); font-weight: 500; }
-
-  .checklist-add {
-    display: flex;
-    gap: 0.75rem;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-  }
-
-  .checklist-add input, .checklist-add select {
-    padding: 0.6rem 0.9rem;
-    border: 1px solid var(--blush);
-    border-radius: 8px;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.82rem;
-    background: white;
-    color: var(--text);
-    outline: none;
-    flex: 1;
-    min-width: 140px;
-  }
 
   /* ── NOTES ── */
   .notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
@@ -1551,26 +1599,63 @@
 
   <!-- CHECKLIST -->
   <div class="page" id="page-checklist">
-    <h1 class="section-title">Timeline & <em>Checklist</em></h1>
-    <p class="section-sub">Stay on track, month by month</p>
-    <div class="checklist-add">
-      <input type="text" id="taskText" placeholder="Task…" />
-      <input type="text" id="taskMonth" placeholder="Month (e.g. October)" />
-      <select id="taskCat">
-        <option value="">Category…</option>
-        <option>Venue</option>
-        <option>Attire</option>
-        <option>Food & Drink</option>
-        <option>Photography</option>
-        <option>Flowers</option>
-        <option>Music</option>
-        <option>Invitations</option>
-        <option>Travel</option>
-        <option>Other</option>
-      </select>
-      <button class="btn-primary" onclick="addTask()">Add Task</button>
+    <h1 class="section-title">Wedding <em>Checklist</em></h1>
+    <p class="section-sub">Everything broken down into what to do, book, buy, and make yourself</p>
+    <div class="cl-grid">
+
+      <div class="cl-col" data-bucket="To Do">
+        <div class="cl-col-hdr">
+          <span class="cl-col-icon">✅</span>
+          <span class="cl-col-title">To Do</span>
+          <span class="cl-col-count" id="cl-count-todo">0/0</span>
+        </div>
+        <div class="cl-items" id="cl-items-todo"></div>
+        <div class="cl-add-row">
+          <input class="cl-input" id="cl-input-todo" placeholder="Add a task…" onkeydown="if(event.key==='Enter')addClTask('To Do')" />
+          <button class="cl-add-btn" onclick="addClTask('To Do')">+</button>
+        </div>
+      </div>
+
+      <div class="cl-col" data-bucket="To Book">
+        <div class="cl-col-hdr">
+          <span class="cl-col-icon">📅</span>
+          <span class="cl-col-title">To Book</span>
+          <span class="cl-col-count" id="cl-count-tobook">0/0</span>
+        </div>
+        <div class="cl-items" id="cl-items-tobook"></div>
+        <div class="cl-add-row">
+          <input class="cl-input" id="cl-input-tobook" placeholder="Add a booking…" onkeydown="if(event.key==='Enter')addClTask('To Book')" />
+          <button class="cl-add-btn" onclick="addClTask('To Book')">+</button>
+        </div>
+      </div>
+
+      <div class="cl-col" data-bucket="To Buy">
+        <div class="cl-col-hdr">
+          <span class="cl-col-icon">🛍️</span>
+          <span class="cl-col-title">To Buy</span>
+          <span class="cl-col-count" id="cl-count-tobuy">0/0</span>
+        </div>
+        <div class="cl-items" id="cl-items-tobuy"></div>
+        <div class="cl-add-row">
+          <input class="cl-input" id="cl-input-tobuy" placeholder="Add an item…" onkeydown="if(event.key==='Enter')addClTask('To Buy')" />
+          <button class="cl-add-btn" onclick="addClTask('To Buy')">+</button>
+        </div>
+      </div>
+
+      <div class="cl-col" data-bucket="To DIY">
+        <div class="cl-col-hdr">
+          <span class="cl-col-icon">✂️</span>
+          <span class="cl-col-title">To DIY</span>
+          <span class="cl-col-count" id="cl-count-todiy">0/0</span>
+        </div>
+        <div class="cl-items" id="cl-items-todiy"></div>
+        <div class="cl-add-row">
+          <input class="cl-input" id="cl-input-todiy" placeholder="Add a project…" onkeydown="if(event.key==='Enter')addClTask('To DIY')" />
+          <button class="cl-add-btn" onclick="addClTask('To DIY')">+</button>
+        </div>
+      </div>
+
     </div>
-    <div id="checklistContainer"></div>
   </div>
 
   <!-- NOTES -->
@@ -2248,55 +2333,49 @@ function renderGuests() {
 }
 
 // ── CHECKLIST ──
-function addTask() {
-  const text = document.getElementById('taskText').value.trim();
-  const month = document.getElementById('taskMonth').value.trim() || 'General';
-  const cat = document.getElementById('taskCat').value || 'Other';
+const BUCKET_IDS = { 'To Do': 'todo', 'To Book': 'tobook', 'To Buy': 'tobuy', 'To DIY': 'todiy' };
+
+function addClTask(bucket) {
+  const slug = BUCKET_IDS[bucket];
+  const input = document.getElementById('cl-input-' + slug);
+  const text = input.value.trim();
   if (!text) return;
-  state.tasks.push({ id: Date.now(), text, month, cat, done: false });
-  document.getElementById('taskText').value = '';
-  document.getElementById('taskMonth').value = '';
-  save();
-  renderChecklist();
+  state.tasks.push({ id: Date.now(), text, bucket, done: false });
+  input.value = '';
+  save(); renderChecklist();
 }
 
 function toggleTask(id) {
   const t = state.tasks.find(t => t.id === id);
   if (t) t.done = !t.done;
-  save();
-  renderChecklist();
+  save(); renderChecklist();
 }
 
 function deleteTask(id) {
   state.tasks = state.tasks.filter(t => t.id !== id);
-  save();
-  renderChecklist();
+  save(); renderChecklist();
 }
 
 function renderChecklist() {
-  const container = document.getElementById('checklistContainer');
-  if (state.tasks.length === 0) {
-    container.innerHTML = '<p style="color:var(--muted);font-style:italic;font-size:0.85rem;text-align:center;padding:2rem">Add your first task above</p>';
-    return;
-  }
-  const byMonth = {};
-  state.tasks.forEach(t => {
-    if (!byMonth[t.month]) byMonth[t.month] = [];
-    byMonth[t.month].push(t);
+  Object.entries(BUCKET_IDS).forEach(([bucket, slug]) => {
+    const items = (state.tasks || []).filter(t => (t.bucket || 'To Do') === bucket);
+    const done = items.filter(t => t.done).length;
+    const countEl = document.getElementById('cl-count-' + slug);
+    const itemsEl = document.getElementById('cl-items-' + slug);
+    if (!countEl || !itemsEl) return;
+    countEl.textContent = done + '/' + items.length;
+    itemsEl.innerHTML = items.length
+      ? items.map(t => `
+          <div class="cl-item ${t.done ? 'done' : ''}">
+            <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask(${t.id})" />
+            <span class="cl-item-text">
+              ${esc(t.text)}
+              ${t.month ? `<span class="cl-item-month">${esc(t.month)}</span>` : ''}
+            </span>
+            <button class="cl-item-del" onclick="deleteTask(${t.id})" title="Remove">✕</button>
+          </div>`).join('')
+      : '<div style="padding:1.2rem 1rem;font-size:0.78rem;color:var(--muted);font-style:italic">Nothing here yet</div>';
   });
-  container.innerHTML = Object.entries(byMonth).map(([month, tasks]) => `
-    <div class="timeline-section">
-      <div class="timeline-month">${esc(month)}</div>
-      ${tasks.map(t => `
-        <div class="checklist-item ${t.done ? 'done' : ''}">
-          <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask(${t.id})" />
-          <span class="item-text">${esc(t.text)}</span>
-          <span class="item-category">${esc(t.cat)}</span>
-          <button class="vendor-delete" onclick="deleteTask(${t.id})" style="margin-left:0.5rem">✕</button>
-        </div>
-      `).join('')}
-    </div>
-  `).join('');
 }
 
 // ── NOTES ──
@@ -2868,105 +2947,90 @@ function deleteRegistryItem(id) {
 // ── PRE-POPULATED WEDDING CHECKLIST ──
 const WEDDING_TASKS = [
   // NOW — ASAP (June–July 2026)
-  { text: "Decide on wedding date — October or April", month: "Now — June/July", cat: "Planning" },
-  { text: "Set your all-in budget and open a HYSA savings account", month: "Now — June/July", cat: "Budget" },
-  { text: "Start saving toward your wedding goal", month: "Now — June/July", cat: "Budget" },
-  { text: "Confirm pastor's availability for your chosen date", month: "Now — June/July", cat: "Officiant" },
-  { text: "Draft your full guest list", month: "Now — June/July", cat: "Guests" },
-  { text: "Decide on ceremony venue — church, outdoor space, rented hall, or other", month: "Now — June/July", cat: "Venue" },
-  { text: "Decide on brunch reception venue — home, rented space, or restaurant private room", month: "Now — June/July", cat: "Reception" },
-  { text: "DECIDE: Will ceremony and reception be the same day and location?", month: "Now — June/July", cat: "Planning" },
-  { text: "DECIDE: Rings — budget, style, where to purchase", month: "Now — June/July", cat: "Planning" },
-  { text: "Start researching engagement photographers — consider booking your wedding photographer first so they can do both", month: "Now — June/July", cat: "Engagement Shoot" },
-  { text: "Scout engagement shoot locations — meaningful spots, parks, city backdrops, your neighborhood", month: "Now — June/July", cat: "Engagement Shoot" },
-  { text: "DECIDE: Use wedding photographer for engagement shoot or hire separately?", month: "Now — June/July", cat: "Engagement Shoot" },
+  { text: "Decide on wedding date", month: "Now — June/July", bucket: "To Do" },
+  { text: "Set your all-in budget and open a HYSA savings account", month: "Now — June/July", bucket: "To Do" },
+  { text: "Start saving toward your wedding goal", month: "Now — June/July", bucket: "To Do" },
+  { text: "Draft your full guest list", month: "Now — June/July", bucket: "To Do" },
+  { text: "DECIDE: Rings — budget, style, where to purchase", month: "Now — June/July", bucket: "To Do" },
+  { text: "DECIDE: How many people — ceremony only vs ceremony + brunch, or all to both", month: "Now — June/July", bucket: "To Do" },
+  { text: "RESEARCH: Pennsylvania name change process after marriage (Social Security, DMV, passport)", month: "Now — June/July", bucket: "To Do" },
+  { text: "Confirm pastor's availability for your chosen date", month: "Now — June/July", bucket: "To Book" },
+  { text: "Start researching engagement photographers", month: "Now — June/July", bucket: "To Book" },
+  { text: "Scout engagement shoot locations — parks, city backdrops, your neighborhood", month: "Now — June/July", bucket: "To DIY" },
 
   // 8–9 MONTHS OUT (July–August 2026)
-  { text: "Tour and book ceremony venue — pay deposit", month: "8–9 Months Out", cat: "Venue" },
-  { text: "Tour and book brunch reception venue — pay deposit", month: "8–9 Months Out", cat: "Venue" },
-  { text: "Book Philadelphia photographer — ask if engagement shoot is included or available as add-on", month: "8–9 Months Out", cat: "Photography" },
-  { text: "Schedule engagement photo shoot — must happen before save-the-dates go out", month: "8–9 Months Out", cat: "Engagement Shoot" },
-  { text: "Plan engagement shoot outfits — coordinated but not matching", month: "8–9 Months Out", cat: "Engagement Shoot" },
-  { text: "Receive and select engagement photos for save-the-dates", month: "8–9 Months Out", cat: "Engagement Shoot" },
-  { text: "Book Philadelphia videographer", month: "8–9 Months Out", cat: "Photography" },
-  { text: "Book Christian DJ for reception", month: "8–9 Months Out", cat: "Music" },
-  { text: "Research and book drop-off catering vendor for brunch reception", month: "8–9 Months Out", cat: "Reception" },
-  { text: "Order custom tiramisu bowl — call Italian bakeries (Termini Bros at Reading Terminal is a strong lead)", month: "8–9 Months Out", cat: "Reception" },
-  { text: "Start wedding dress shopping — budget ~$900–$1,800 simple/minimalist style", month: "8–9 Months Out", cat: "Attire" },
-  { text: "Research linen suit options for groom (own or rent)", month: "8–9 Months Out", cat: "Attire" },
-  { text: "Research Playa del Carmen hotels — 3 to 5 nights, book early for best rates", month: "8–9 Months Out", cat: "Honeymoon" },
-  { text: "Book round-trip flights to Playa del Carmen", month: "8–9 Months Out", cat: "Honeymoon" },
+  { text: "Receive and select engagement photos for save-the-dates", month: "8–9 Months Out", bucket: "To Do" },
+  { text: "Research Playa del Carmen hotels — 3 to 5 nights, book early", month: "8–9 Months Out", bucket: "To Do" },
+  { text: "RESEARCH: Mexico entry requirements — passport, tourist card (FMM), travel insurance", month: "8–9 Months Out", bucket: "To Do" },
+  { text: "RESEARCH: Playa del Carmen safe zones and hotel recommendations within budget", month: "8–9 Months Out", bucket: "To Do" },
+  { text: "Book Philadelphia photographer (ask if engagement shoot included)", month: "8–9 Months Out", bucket: "To Book" },
+  { text: "Schedule engagement photo shoot — before save-the-dates go out", month: "8–9 Months Out", bucket: "To Book" },
+  { text: "Book Philadelphia videographer", month: "8–9 Months Out", bucket: "To Book" },
+  { text: "Book Christian DJ for reception", month: "8–9 Months Out", bucket: "To Book" },
+  { text: "Research and book drop-off catering vendor for brunch reception", month: "8–9 Months Out", bucket: "To Book" },
+  { text: "Order custom tiramisu bowl — Termini Bros at Reading Terminal", month: "8–9 Months Out", bucket: "To Book" },
+  { text: "Book round-trip flights to Playa del Carmen", month: "8–9 Months Out", bucket: "To Book" },
+  { text: "Start wedding dress shopping — ~$900–$1,800 simple/minimalist", month: "8–9 Months Out", bucket: "To Buy" },
+  { text: "Research linen suit options for groom (own or rent)", month: "8–9 Months Out", bucket: "To Buy" },
+  { text: "Plan engagement shoot outfits — coordinated but not matching", month: "8–9 Months Out", bucket: "To DIY" },
 
   // 6–7 MONTHS OUT (September–October 2026)
-  { text: "Send save-the-dates to all guests", month: "6–7 Months Out", cat: "Guests" },
-  { text: "Order / purchase wedding dress — allow 4–6 months for alterations", month: "6–7 Months Out", cat: "Attire" },
-  { text: "Book florist — minimalist bouquet + boutonniere only", month: "6–7 Months Out", cat: "Florals" },
-  { text: "Book hair & makeup artist for wedding day", month: "6–7 Months Out", cat: "Attire" },
-  { text: "Book Playa del Carmen hotel — pay deposit", month: "6–7 Months Out", cat: "Honeymoon" },
-  { text: "Discuss vows with pastor — traditional or personal written vows", month: "6–7 Months Out", cat: "Ceremony" },
-  { text: "Choose ceremony music / playlist with pastor", month: "6–7 Months Out", cat: "Ceremony" },
-  { text: "Decide on ceremony décor — venue style, minimal accents, florals placement", month: "6–7 Months Out", cat: "Ceremony" },
-  { text: "Set RSVP deadline for guests (recommend 6–8 weeks before wedding)", month: "6–7 Months Out", cat: "Guests" },
+  { text: "Discuss vows with pastor — traditional or personal written vows", month: "6–7 Months Out", bucket: "To Do" },
+  { text: "Decide on ceremony décor — minimal accents, florals placement", month: "6–7 Months Out", bucket: "To Do" },
+  { text: "Set RSVP deadline for guests (6–8 weeks before wedding)", month: "6–7 Months Out", bucket: "To Do" },
+  { text: "DECIDE: Brunch menu — confirm drop-off catering options", month: "6–7 Months Out", bucket: "To Do" },
+  { text: "Book florist — minimalist bouquet + boutonniere only", month: "6–7 Months Out", bucket: "To Book" },
+  { text: "Book hair & makeup artist for wedding day", month: "6–7 Months Out", bucket: "To Book" },
+  { text: "Book Playa del Carmen hotel — pay deposit", month: "6–7 Months Out", bucket: "To Book" },
+  { text: "Order / purchase wedding dress — allow 4–6 months for alterations", month: "6–7 Months Out", bucket: "To Buy" },
+  { text: "Send save-the-dates to all guests", month: "6–7 Months Out", bucket: "To DIY" },
+  { text: "Choose ceremony music / playlist with pastor", month: "6–7 Months Out", bucket: "To DIY" },
 
   // 4–5 MONTHS OUT (November–December 2026)
-  { text: "Apply for Philadelphia marriage license — both in person, City Hall Room 413", month: "4–5 Months Out", cat: "Admin" },
-  { text: "Bring: cash or money order for $90 fee + photo ID + Social Security card", month: "4–5 Months Out", cat: "Admin" },
-  { text: "Note: 3-day waiting period after issue, valid for 60 days — time it right", month: "4–5 Months Out", cat: "Admin" },
-  { text: "First dress fitting / alterations appointment", month: "4–5 Months Out", cat: "Attire" },
-  { text: "Purchase wedding shoes and accessories", month: "4–5 Months Out", cat: "Attire" },
-  { text: "Finalize brunch guest count and confirm with caterer", month: "4–5 Months Out", cat: "Guests" },
-  { text: "Decide on brunch reception décor — simple, no-fuss", month: "4–5 Months Out", cat: "Reception" },
-  { text: "Create seating / table plan for brunch reception", month: "4–5 Months Out", cat: "Guests" },
-  { text: "Research and purchase wedding rings", month: "4–5 Months Out", cat: "Planning" },
-  { text: "Start honeymoon packing list", month: "4–5 Months Out", cat: "Honeymoon" },
-  { text: "Check passport validity — both must be valid 6 months beyond return date", month: "4–5 Months Out", cat: "Travel" },
+  { text: "Apply for Philadelphia marriage license — City Hall Room 413, bring $90 + photo ID + SSN card", month: "4–5 Months Out", bucket: "To Do" },
+  { text: "Note: 3-day waiting period after issue, valid for 60 days — time it right", month: "4–5 Months Out", bucket: "To Do" },
+  { text: "First dress fitting / alterations appointment", month: "4–5 Months Out", bucket: "To Do" },
+  { text: "Finalize brunch guest count and confirm with caterer", month: "4–5 Months Out", bucket: "To Do" },
+  { text: "Start honeymoon packing list", month: "4–5 Months Out", bucket: "To Do" },
+  { text: "Check passport validity — both valid 6 months beyond return date", month: "4–5 Months Out", bucket: "To Do" },
+  { text: "Purchase wedding shoes and accessories", month: "4–5 Months Out", bucket: "To Buy" },
+  { text: "Research and purchase wedding rings", month: "4–5 Months Out", bucket: "To Buy" },
+  { text: "Create seating / table plan for brunch reception", month: "4–5 Months Out", bucket: "To DIY" },
+  { text: "Decide on brunch reception décor — simple, no-fuss", month: "4–5 Months Out", bucket: "To DIY" },
 
   // 2–3 MONTHS OUT (January–February 2027)
-  { text: "Second / final dress fitting", month: "2–3 Months Out", cat: "Attire" },
-  { text: "Confirm all vendor bookings — photographer, videographer, DJ, florist, caterer, hair/makeup", month: "2–3 Months Out", cat: "Planning" },
-  { text: "Confirm tiramisu bowl order — quantity, pickup or delivery, timing", month: "2–3 Months Out", cat: "Reception" },
-  { text: "Write personal vows (if doing written vows)", month: "2–3 Months Out", cat: "Ceremony" },
-  { text: "Create ceremony program / order of service with pastor", month: "2–3 Months Out", cat: "Ceremony" },
-  { text: "Create shot list for photographer", month: "2–3 Months Out", cat: "Photography" },
-  { text: "Create music do's and don'ts list for DJ", month: "2–3 Months Out", cat: "Music" },
-  { text: "Confirm Playa del Carmen hotel and all honeymoon bookings", month: "2–3 Months Out", cat: "Honeymoon" },
-  { text: "Research Playa del Carmen activities — cenotes, excursions, restaurants", month: "2–3 Months Out", cat: "Honeymoon" },
-  { text: "Prepare vendor tip envelopes", month: "2–3 Months Out", cat: "Budget" },
-  { text: "Send wedding invitations with RSVP card or link", month: "2–3 Months Out", cat: "Guests" },
+  { text: "Second / final dress fitting", month: "2–3 Months Out", bucket: "To Do" },
+  { text: "Confirm all vendor bookings — photographer, videographer, DJ, florist, caterer, hair/makeup", month: "2–3 Months Out", bucket: "To Do" },
+  { text: "Confirm tiramisu bowl order — quantity, pickup or delivery, timing", month: "2–3 Months Out", bucket: "To Do" },
+  { text: "Confirm Playa del Carmen hotel and all honeymoon bookings", month: "2–3 Months Out", bucket: "To Do" },
+  { text: "Research Playa del Carmen activities — cenotes, excursions, restaurants", month: "2–3 Months Out", bucket: "To Do" },
+  { text: "Prepare vendor tip envelopes", month: "2–3 Months Out", bucket: "To Buy" },
+  { text: "Write personal vows", month: "2–3 Months Out", bucket: "To DIY" },
+  { text: "Create ceremony program / order of service with pastor", month: "2–3 Months Out", bucket: "To DIY" },
+  { text: "Create shot list for photographer", month: "2–3 Months Out", bucket: "To DIY" },
+  { text: "Create music do's and don'ts list for DJ", month: "2–3 Months Out", bucket: "To DIY" },
+  { text: "Send wedding invitations with RSVP card or link", month: "2–3 Months Out", bucket: "To DIY" },
 
   // 1 MONTH OUT (March 2027)
-  { text: "Apply for Philadelphia marriage license if not done — watch the 3-day wait and 60-day window", month: "1 Month Out", cat: "Admin" },
-  { text: "Confirm catering delivery time and brunch reception logistics", month: "1 Month Out", cat: "Reception" },
-  { text: "Confirm tiramisu bowl pickup or delivery day and time", month: "1 Month Out", cat: "Reception" },
-  { text: "Groom haircut + grooming appointment", month: "1 Month Out", cat: "Attire" },
-  { text: "Send final reminder to guests with any day-of details", month: "1 Month Out", cat: "Guests" },
-  { text: "Confirm transportation / parking plan for wedding day", month: "1 Month Out", cat: "Planning" },
-  { text: "Pack honeymoon bags", month: "1 Month Out", cat: "Honeymoon" },
-  { text: "Arrange someone to manage brunch reception setup while you're at ceremony", month: "1 Month Out", cat: "Reception" },
-  { text: "Final payment to all vendors", month: "1 Month Out", cat: "Budget" },
-
-  // THINGS TO RESEARCH & DECIDE
-  { text: "DECIDE: October vs April — consider weather, venue availability, and budget differences by season", month: "Things to Research & Decide", cat: "Planning" },
-  { text: "DECIDE: How many people — ceremony only vs ceremony + brunch, or all to both", month: "Things to Research & Decide", cat: "Guests" },
-  { text: "DECIDE: Honeymoon — 3 nights vs 5 nights in Playa del Carmen", month: "Things to Research & Decide", cat: "Honeymoon" },
-  { text: "DECIDE: Brunch menu — confirm what drop-off catering vendors in your area offer", month: "Things to Research & Decide", cat: "Reception" },
-  { text: "RESEARCH: Ceremony venues in Philadelphia that work for a faith-based wedding (church, chapel, garden)", month: "Things to Research & Decide", cat: "Venue" },
-  { text: "RESEARCH: Travel insurance for Playa del Carmen honeymoon", month: "Things to Research & Decide", cat: "Travel" },
-  { text: "RESEARCH: Mexico entry requirements — passport, tourist card (FMM), travel health insurance", month: "Things to Research & Decide", cat: "Travel" },
-  { text: "RESEARCH: Playa del Carmen safe zones and hotel recommendations within budget", month: "Things to Research & Decide", cat: "Honeymoon" },
-  { text: "RESEARCH: Pennsylvania name change process after marriage (Social Security, DMV, passport)", month: "Things to Research & Decide", cat: "Admin" },
+  { text: "Apply for marriage license if not done — watch the 3-day wait and 60-day window", month: "1 Month Out", bucket: "To Do" },
+  { text: "Confirm catering delivery time and brunch reception logistics", month: "1 Month Out", bucket: "To Do" },
+  { text: "Confirm tiramisu bowl pickup or delivery day and time", month: "1 Month Out", bucket: "To Do" },
+  { text: "Send final reminder to guests with day-of details", month: "1 Month Out", bucket: "To Do" },
+  { text: "Confirm transportation / parking plan for wedding day", month: "1 Month Out", bucket: "To Do" },
+  { text: "Arrange someone to manage brunch reception setup while you're at ceremony", month: "1 Month Out", bucket: "To Do" },
+  { text: "Final payment to all vendors", month: "1 Month Out", bucket: "To Do" },
+  { text: "Groom haircut + grooming appointment", month: "1 Month Out", bucket: "To Book" },
+  { text: "Pack honeymoon bags", month: "1 Month Out", bucket: "To DIY" },
 ];
 
 function seedChecklist() {
-  // Always replace tasks to reflect updated list (remove DR tasks)
-  const hasOldDRTasks = state.tasks.some(t => t.text && t.text.includes('DR'));
-  const missingEngagement = !state.tasks.some(t => t.cat === 'Engagement Shoot');
-  if (state.tasks.length === 0 || hasOldDRTasks || missingEngagement) {
+  const needsReseed = state.tasks.length === 0 || !state.tasks.some(t => t.bucket);
+  if (needsReseed) {
     state.tasks = WEDDING_TASKS.map((t, i) => ({
       id: Date.now() + i,
       text: t.text,
       month: t.month,
-      cat: t.cat,
+      bucket: t.bucket,
       done: false
     }));
     save();
