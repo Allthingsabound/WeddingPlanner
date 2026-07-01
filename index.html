@@ -556,60 +556,89 @@
   .item-category { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sand); font-weight: 500; }
 
   /* ── NOTES ── */
-  .notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
-
-  .note-card {
-    background: white;
-    border: 1px solid var(--blush);
-    border-radius: 12px;
-    padding: 1rem;
-    position: relative;
-    min-height: 140px;
-  }
-
-  .note-card textarea {
-    width: 100%;
-    min-height: 100px;
-    border: none;
-    outline: none;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.83rem;
-    color: var(--text);
-    resize: none;
-    background: transparent;
-    line-height: 1.6;
-  }
-
-  .note-delete {
-    position: absolute;
-    top: 0.5rem; right: 0.5rem;
-    background: none;
-    border: none;
-    color: var(--blush);
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: color 0.2s;
-  }
-
-  .note-delete:hover { color: var(--danger); }
-
-  .note-add-btn {
-    background: var(--petal);
-    border: 2px dashed var(--blush);
-    border-radius: 12px;
-    min-height: 140px;
+  /* ── NOTEBOOK ── */
+  .notebook {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.1rem;
-    font-style: italic;
-    color: var(--muted);
-    transition: all 0.2s;
+    border-radius: 2px 12px 12px 2px;
+    box-shadow: -2px 2px 8px rgba(61,43,31,0.12), 4px 10px 32px rgba(61,43,31,0.18);
+    min-height: 600px;
+    overflow: hidden;
   }
-
-  .note-add-btn:hover { background: var(--blush); color: var(--mocha); }
+  .nb-spine {
+    width: 44px; flex-shrink: 0;
+    background: linear-gradient(to right, #211208 0%, #4A3020 55%, #3D2B1F 100%);
+    display: flex; flex-direction: column;
+    align-items: center; padding: 18px 0; gap: 13px;
+  }
+  .nb-ring {
+    width: 20px; height: 20px;
+    border: 2.5px solid #C9A98A; border-radius: 50%;
+    background: #150c05; flex-shrink: 0;
+  }
+  .nb-pages { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .nb-tabs {
+    display: flex; align-items: flex-end;
+    background: #e4d3b8; border-bottom: 2px solid #c8b69a;
+    overflow-x: auto; gap: 2px; padding: 8px 8px 0; flex-shrink: 0;
+  }
+  .nb-tabs::-webkit-scrollbar { height: 4px; }
+  .nb-tabs::-webkit-scrollbar-thumb { background: var(--blush); border-radius: 4px; }
+  .nb-tab {
+    display: flex; align-items: center; gap: 5px;
+    padding: 5px 11px; font-size: 0.73rem;
+    font-family: 'Inter', sans-serif;
+    background: #cebfa4; border: 1px solid #bfad91; border-bottom: none;
+    border-radius: 5px 5px 0 0; cursor: pointer; color: var(--muted);
+    transition: background 0.15s; white-space: nowrap; user-select: none;
+  }
+  .nb-tab:hover { background: #d8cab0; }
+  .nb-tab.active { background: #FFFEF9; color: var(--mocha); font-weight: 500; }
+  .nb-tab-label { max-width: 130px; overflow: hidden; text-overflow: ellipsis; }
+  .nb-tab-del {
+    font-size: 0.58rem; color: var(--blush); opacity: 0;
+    transition: opacity 0.15s; cursor: pointer; line-height: 1; padding: 1px;
+  }
+  .nb-tab:hover .nb-tab-del, .nb-tab.active .nb-tab-del { opacity: 0.7; }
+  .nb-tab-del:hover { color: var(--danger); opacity: 1 !important; }
+  .nb-add-tab {
+    background: none; border: none; cursor: pointer;
+    font-size: 1.2rem; color: var(--muted); padding: 3px 10px 5px;
+    border-radius: 5px 5px 0 0; transition: all 0.15s; line-height: 1;
+  }
+  .nb-add-tab:hover { background: #d8cab0; color: var(--mocha); }
+  .nb-page {
+    flex: 1;
+    background-color: #FFFEF9;
+    background-image:
+      linear-gradient(90deg, transparent 79px, rgba(185,55,55,0.22) 79px, rgba(185,55,55,0.22) 80px, transparent 80px),
+      repeating-linear-gradient(transparent, transparent 31px, rgba(170,158,140,0.45) 31px, rgba(170,158,140,0.45) 32px);
+    background-size: 100% 100%, 100% 32px;
+    background-position: 0 0, 0 8px;
+    background-repeat: no-repeat, repeat;
+  }
+  .nb-textarea {
+    width: 100%; height: 100%; min-height: 560px;
+    padding: 8px 2.5rem 2.5rem 100px;
+    border: none; outline: none; resize: none;
+    background: transparent;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.08rem; line-height: 32px; color: var(--text);
+  }
+  .nb-textarea::placeholder { color: var(--blush); font-style: italic; }
+  .nb-empty {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; min-height: 560px; padding: 3rem; text-align: center;
+  }
+  @media (max-width: 640px) {
+    .nb-spine { width: 30px; }
+    .nb-ring { width: 14px; height: 14px; border-width: 2px; }
+    .nb-page {
+      background-image:
+        linear-gradient(90deg, transparent 49px, rgba(185,55,55,0.22) 49px, rgba(185,55,55,0.22) 50px, transparent 50px),
+        repeating-linear-gradient(transparent, transparent 31px, rgba(170,158,140,0.45) 31px, rgba(170,158,140,0.45) 32px);
+    }
+    .nb-textarea { padding-left: 64px; }
+  }
 
 
   /* ── COUNTDOWN ── */
@@ -1662,8 +1691,22 @@
   <div class="page" id="page-notes">
     <h1 class="section-title">Ideas & <em>Notes</em></h1>
     <p class="section-sub">A free space for everything in your head</p>
-    <div class="notes-grid" id="notesGrid">
-      <button class="note-add-btn" onclick="addNote()">+ New note</button>
+    <div class="notebook" id="notebook">
+      <!-- spine with rings -->
+      <div class="nb-spine" id="nbSpine"></div>
+      <!-- pages area -->
+      <div class="nb-pages">
+        <div class="nb-tabs" id="nbTabs">
+          <button class="nb-add-tab" onclick="addNote()" title="New page">+</button>
+        </div>
+        <div class="nb-page" id="nbPage">
+          <div class="nb-empty" id="nbEmpty">
+            <p style="color:var(--blush);font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-style:italic;">No pages yet — hit <strong>+</strong> to start writing</p>
+          </div>
+          <textarea class="nb-textarea" id="nbTextarea" placeholder="Write anything…" style="display:none"
+            oninput="onNoteInput(this.value)" onchange="onNoteChange(this.value)"></textarea>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2005,6 +2048,7 @@ let state = {
 };
 
 const STORAGE_KEY = 'weddingHub_airy_v1';
+let activeNoteId = null;
 
 // Escape user-entered text before putting it into innerHTML / attributes,
 // so notes or names containing < > " ' & can't break the layout.
@@ -2379,32 +2423,84 @@ function renderChecklist() {
 }
 
 // ── NOTES ──
-function addNote() {
-  state.notes.push({ id: Date.now(), text: '' });
-  save();
-  renderNotes();
+function noteLabel(text) {
+  const first = (text || '').trim().split('\n')[0].trim();
+  return first.length > 0 ? first : 'New page';
 }
 
-function updateNote(id, text) {
-  const n = state.notes.find(n => n.id === id);
-  if (n) n.text = text;
+function addNote() {
+  const n = { id: Date.now(), text: '' };
+  state.notes.push(n);
+  activeNoteId = n.id;
   save();
+  renderNotes();
+  const ta = document.getElementById('nbTextarea');
+  if (ta) setTimeout(() => ta.focus(), 0);
+}
+
+function onNoteInput(text) {
+  const n = state.notes.find(n => n.id === activeNoteId);
+  if (!n) return;
+  n.text = text;
+  saveSoon();
+  const activeTab = document.querySelector('.nb-tab.active .nb-tab-label');
+  if (activeTab) activeTab.textContent = noteLabel(text);
+}
+
+function onNoteChange(text) {
+  const n = state.notes.find(n => n.id === activeNoteId);
+  if (!n) return;
+  n.text = text;
+  save();
+}
+
+function switchNote(id) {
+  activeNoteId = id;
+  renderNotes();
 }
 
 function deleteNote(id) {
   state.notes = state.notes.filter(n => n.id !== id);
+  if (activeNoteId === id) {
+    activeNoteId = state.notes.length > 0 ? state.notes[state.notes.length - 1].id : null;
+  }
   save();
   renderNotes();
 }
 
 function renderNotes() {
-  const grid = document.getElementById('notesGrid');
-  grid.innerHTML = state.notes.map(n => `
-    <div class="note-card">
-      <button class="note-delete" onclick="deleteNote(${n.id})">✕</button>
-      <textarea placeholder="Write anything…" onchange="updateNote(${n.id}, this.value)">${esc(n.text)}</textarea>
-    </div>
-  `).join('') + `<button class="note-add-btn" onclick="addNote()">+ New note</button>`;
+  if (state.notes.length === 0) { activeNoteId = null; }
+  else if (!state.notes.find(n => n.id === activeNoteId)) {
+    activeNoteId = state.notes[state.notes.length - 1].id;
+  }
+
+  const spine = document.getElementById('nbSpine');
+  if (spine) spine.innerHTML = Array.from({length: 9}, () => '<div class="nb-ring"></div>').join('');
+
+  const tabs = document.getElementById('nbTabs');
+  if (tabs) {
+    const tabHtml = state.notes.map(n => `
+      <div class="nb-tab${n.id === activeNoteId ? ' active' : ''}" onclick="switchNote(${n.id})">
+        <span class="nb-tab-label">${esc(noteLabel(n.text))}</span>
+        <span class="nb-tab-del" onclick="event.stopPropagation();deleteNote(${n.id})" title="Delete page">✕</span>
+      </div>
+    `).join('');
+    tabs.innerHTML = tabHtml + '<button class="nb-add-tab" onclick="addNote()" title="New page">+</button>';
+  }
+
+  const empty = document.getElementById('nbEmpty');
+  const ta = document.getElementById('nbTextarea');
+  if (!ta || !empty) return;
+
+  if (activeNoteId === null) {
+    empty.style.display = '';
+    ta.style.display = 'none';
+  } else {
+    const n = state.notes.find(n => n.id === activeNoteId);
+    empty.style.display = 'none';
+    ta.style.display = '';
+    ta.value = n ? n.text : '';
+  }
 }
 
 
