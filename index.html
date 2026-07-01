@@ -932,11 +932,6 @@
     .countdown-tiles { gap: 0.6rem; }
     .countdown-tile { min-width: 65px; padding: 0.75rem 1rem; }
     .countdown-tile span { font-size: 2rem; }
-    .apt-afford-grid { grid-template-columns: 1fr; }
-    .apt-form-grid { grid-template-columns: 1fr; }
-    .apt-two-col { grid-template-columns: 1fr; }
-    .apt-viewing-add { flex-direction: column; }
-    .apt-afford-result-row { gap: 1rem; }
     nav { padding: 0 1rem; }
     .nav-brand { font-size: 1.1rem; }
     .savings-controls { grid-template-columns: 1fr; }
@@ -1252,6 +1247,17 @@
   .apt-checklist-item.done { background: var(--petal); border-color: transparent; }
   .apt-checklist-item.done .item-text { text-decoration: line-through; color: var(--muted); }
   .apt-checklist-item input[type="checkbox"] { accent-color: var(--mocha); cursor: pointer; flex-shrink: 0; }
+
+  @media (max-width: 640px) {
+    .apt-afford-block { padding: 1.25rem 1rem; }
+    .apt-afford-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+    .apt-afford-result-row { flex-wrap: wrap; gap: 0.75rem; }
+    .apt-form-grid { grid-template-columns: 1fr; }
+    .apt-two-col { grid-template-columns: 1fr; }
+    .apt-section-header { flex-wrap: wrap; gap: 0.5rem; }
+    .apt-viewing-add { flex-direction: column; align-items: stretch; }
+    .apt-viewing-add .btn-primary { width: 100%; }
+  }
 
 </style>
 
