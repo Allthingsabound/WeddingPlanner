@@ -442,6 +442,89 @@
   .rsvp-no { background: #FAE8E5; color: var(--danger); }
   .rsvp-pending { background: var(--petal); color: var(--muted); }
 
+  /* ── TABLE SETUP + VENUE MAP ── */
+  .guest-pg-tabs { display:flex; gap:6px; margin-bottom:1.5rem; }
+  .guest-pg-tab {
+    padding:8px 22px; border-radius:8px; border:2px solid var(--sand);
+    background:transparent; cursor:pointer; font-size:0.83rem;
+    font-weight:500; color:var(--muted); transition:all 0.2s;
+  }
+  .guest-pg-tab.active { background:var(--mocha); color:#fff; border-color:var(--mocha); }
+  .guest-pg-tab:not(.active):hover { background:var(--petal); color:var(--mocha); }
+
+  .tables-add-form {
+    display:grid; grid-template-columns:1fr 80px 120px auto; gap:8px; align-items:center;
+    background:var(--petal); padding:1rem; border-radius:10px; margin-bottom:1.25rem;
+  }
+  .tables-add-form input, .tables-add-form select {
+    padding:0.55rem 0.85rem; border:1.5px solid var(--blush);
+    border-radius:8px; background:white; font-size:0.82rem;
+    font-family:inherit; color:var(--text); outline:none;
+  }
+  .tables-add-form input:focus, .tables-add-form select:focus { border-color:var(--mocha); }
+  .tables-add-form .btn-primary { padding:0.6rem 1rem; white-space:nowrap; }
+
+  .tbl-cards { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:1.5rem; min-height:10px; }
+  .tbl-card {
+    background:white; border:1.5px solid var(--sand); border-radius:10px;
+    padding:10px 36px 10px 14px; position:relative;
+  }
+  .tbl-card-name { font-weight:600; font-size:0.85rem; color:var(--mocha); }
+  .tbl-card-meta { font-size:0.72rem; color:var(--muted); margin-top:2px; }
+  .tbl-card-del {
+    position:absolute; top:8px; right:8px; background:none; border:none;
+    cursor:pointer; color:var(--blush); font-size:0.78rem; padding:2px;
+  }
+  .tbl-card-del:hover { color:var(--danger); }
+
+  .venue-wrap { background:white; border:1.5px solid var(--sand); border-radius:14px; overflow:hidden; }
+  .venue-hint {
+    font-size:0.71rem; color:var(--muted); padding:5px 14px;
+    background:rgba(201,169,138,0.08); border-bottom:1px solid var(--petal);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  #venueMap { width:100%; display:block; cursor:default; touch-action:none; user-select:none; }
+  .venue-seat-panel {
+    background:white; border:1.5px solid var(--sand); border-radius:12px;
+    padding:1.25rem 1.5rem; margin-top:1rem;
+  }
+  .venue-seat-hdr {
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;
+  }
+  .venue-seat-title { font-weight:600; font-size:0.92rem; color:var(--mocha); }
+  .seat-row {
+    display:flex; align-items:center; gap:10px; padding:7px 0;
+    border-bottom:1px solid var(--petal); font-size:0.82rem;
+  }
+  .seat-row:last-child { border-bottom:none; }
+  .seat-num {
+    width:26px; height:26px; border-radius:50%; background:var(--blush);
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.7rem; font-weight:700; color:var(--mocha); flex-shrink:0;
+  }
+  .seat-name { flex:1; }
+  .seat-unassign {
+    background:none; border:none; cursor:pointer; color:var(--blush);
+    font-size:0.78rem; padding:2px 4px;
+  }
+  .seat-unassign:hover { color:var(--danger); }
+  .seat-empty { color:var(--muted); font-style:italic; font-size:0.82rem; padding:0.5rem 0; }
+  .seat-assign-row {
+    display:flex; gap:8px; margin-top:0.75rem; padding-top:0.75rem;
+    border-top:1px solid var(--petal); align-items:center; flex-wrap:wrap;
+  }
+  .seat-assign-row select, .seat-assign-row input {
+    flex:1; min-width:120px; padding:0.45rem 0.7rem; border:1.5px solid var(--blush);
+    border-radius:8px; font-family:inherit; font-size:0.8rem;
+    background:white; color:var(--text); outline:none;
+  }
+  .seat-assign-row select:focus, .seat-assign-row input:focus { border-color:var(--mocha); }
+  .seat-assign-row input[type=text] { flex:0 0 80px; min-width:70px; }
+  @media (max-width:640px) {
+    .tables-add-form { grid-template-columns:1fr 1fr; }
+    .tables-add-form .btn-primary { grid-column:1/-1; }
+  }
+
   /* ── CHECKLIST ── */
   /* ── CHECKLIST (4-column kanban) ── */
   .cl-grid {
@@ -1595,35 +1678,92 @@
       <div class="guest-stat"><div class="guest-stat-num" id="rsvpNo">0</div><div class="guest-stat-label">Declined</div></div>
       <div class="guest-stat"><div class="guest-stat-num" id="plusOnes">0</div><div class="guest-stat-label">Plus Ones</div></div>
     </div>
-    <div class="guest-add-form">
-      <input type="text" id="gName" placeholder="Full name" />
-      <input type="text" id="gContact" placeholder="Phone or email" />
-      <select id="gRsvp">
-        <option value="pending">RSVP Pending</option>
-        <option value="yes">Yes ✓</option>
-        <option value="no">No ✗</option>
-      </select>
-      <input type="text" id="gTable" placeholder="Table / seating" />
-      <select id="gPlus">
-        <option value="no">No plus one</option>
-        <option value="yes">Has plus one</option>
-      </select>
-      <div></div>
-      <button class="btn-primary" onclick="addGuest()" style="grid-column:1/-1">Add Guest</button>
+
+    <div class="guest-pg-tabs">
+      <button class="guest-pg-tab active" id="tabGuestList" onclick="switchGuestTab('list')">Guest List</button>
+      <button class="guest-pg-tab" id="tabSeatingMap" onclick="switchGuestTab('map')">Seating Map</button>
     </div>
-    <table id="guestTable">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Contact</th>
-          <th>RSVP</th>
-          <th>Table</th>
-          <th>+1</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="guestBody"></tbody>
-    </table>
+
+    <!-- PANEL: Guest List -->
+    <div id="guestListPanel">
+      <div class="guest-add-form">
+        <input type="text" id="gName" placeholder="Full name" />
+        <input type="text" id="gContact" placeholder="Phone or email" />
+        <select id="gRsvp">
+          <option value="pending">RSVP Pending</option>
+          <option value="yes">Yes ✓</option>
+          <option value="no">No ✗</option>
+        </select>
+        <select id="gPlus">
+          <option value="no">No plus one</option>
+          <option value="yes">Has plus one</option>
+        </select>
+        <select id="gTable">
+          <option value="">No table assigned</option>
+        </select>
+        <input type="text" id="gChair" placeholder="Seat #" />
+        <button class="btn-primary" onclick="addGuest()" style="grid-column:1/-1">Add Guest</button>
+      </div>
+      <table id="guestTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Contact</th>
+            <th>RSVP</th>
+            <th>Table</th>
+            <th>Seat</th>
+            <th>+1</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="guestBody"></tbody>
+      </table>
+    </div>
+
+    <!-- PANEL: Seating Map -->
+    <div id="seatingMapPanel" style="display:none">
+      <h3 style="font-size:0.95rem;font-weight:600;color:var(--mocha);margin-bottom:0.75rem">Tables</h3>
+      <div class="tables-add-form">
+        <input type="text" id="tblName" placeholder="Table name (e.g. Table 1)" />
+        <input type="number" id="tblSeats" placeholder="Seats" min="1" max="30" value="8" />
+        <select id="tblShape">
+          <option value="round">Round</option>
+          <option value="rect">Rectangular</option>
+        </select>
+        <button class="btn-primary" onclick="addTable()">+ Add Table</button>
+      </div>
+      <div class="tbl-cards" id="tblCards"></div>
+
+      <div class="venue-wrap">
+        <div class="venue-hint">
+          <span>Click a table to assign guests · Drag to rearrange</span>
+          <span id="venueCapacity"></span>
+        </div>
+        <svg id="venueMap" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
+          onmousemove="mapDragMove(event)" onmouseup="mapDragEnd()" onmouseleave="mapDragEnd()"
+          ontouchmove="mapDragMove(event)" ontouchend="mapDragEnd()">
+          <rect width="800" height="480" fill="#FBF6F0"/>
+          <text id="mapEmptyHint" x="400" y="240" text-anchor="middle"
+            fill="#C9A98A" font-family="Georgia,serif" font-size="17" font-style="italic">
+            Add tables above to start arranging your venue
+          </text>
+        </svg>
+      </div>
+
+      <!-- Seat assignment panel — shown when table is clicked -->
+      <div class="venue-seat-panel" id="seatPanel" style="display:none">
+        <div class="venue-seat-hdr">
+          <span class="venue-seat-title" id="seatPanelTitle"></span>
+          <button class="link-btn" onclick="closeSeatPanel()">Close ✕</button>
+        </div>
+        <div id="seatPanelBody"></div>
+        <div class="seat-assign-row">
+          <select id="seatAssignGuest"><option value="">Assign guest…</option></select>
+          <input type="text" id="seatAssignChair" placeholder="Seat #" />
+          <button class="btn-primary" onclick="assignGuestToTable()" style="white-space:nowrap;padding:0.45rem 0.9rem;flex:0 0 auto">Assign</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- CHECKLIST -->
@@ -2039,6 +2179,7 @@ let state = {
   savings: { goal: 0, saved: 0, log: [] },
   vendors: [],
   guests: [],
+  tables: [],
   tasks: [],
   notes: [],
   weddingDate: '',
@@ -2160,11 +2301,24 @@ function lockSite() {
   location.reload();
 }
 
+let mapDrag = null;
+let selectedTableId = null;
+
+function svgPt(e) {
+  const svg = document.getElementById('venueMap');
+  const pt = svg.createSVGPoint();
+  const src = (e.touches && e.touches[0]) ? e.touches[0] : e;
+  pt.x = src.clientX; pt.y = src.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+
 function load() {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (raw) {
     try { state = JSON.parse(raw); } catch(e) {}
   }
+  if (!state.tables) state.tables = [];
+  state.guests.forEach(g => { if (g.chair === undefined) g.chair = ''; });
   renderAll();
 }
 
@@ -2173,6 +2327,7 @@ function renderAll() {
   renderSavings();
   renderVendors();
   renderGuests();
+  renderTables();
   renderChecklist();
   renderNotes();
   renderHoneymoon();
@@ -2333,6 +2488,14 @@ function renderVendors() {
 }
 
 // ── GUESTS ──
+function switchGuestTab(tab) {
+  document.getElementById('guestListPanel').style.display = tab === 'list' ? '' : 'none';
+  document.getElementById('seatingMapPanel').style.display = tab === 'map' ? '' : 'none';
+  document.getElementById('tabGuestList').classList.toggle('active', tab === 'list');
+  document.getElementById('tabSeatingMap').classList.toggle('active', tab === 'map');
+  if (tab === 'map') renderVenueMap();
+}
+
 function addGuest() {
   const name = document.getElementById('gName').value.trim();
   if (!name) return;
@@ -2341,20 +2504,25 @@ function addGuest() {
     name,
     contact: document.getElementById('gContact').value.trim(),
     rsvp: document.getElementById('gRsvp').value,
-    table: document.getElementById('gTable').value.trim(),
-    plusOne: document.getElementById('gPlus').value
+    plusOne: document.getElementById('gPlus').value,
+    table: document.getElementById('gTable').value,
+    chair: document.getElementById('gChair').value.trim()
   });
-  ['gName','gContact','gTable'].forEach(id => document.getElementById(id).value = '');
+  ['gName','gContact','gChair'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('gRsvp').value = 'pending';
+  document.getElementById('gTable').value = '';
   document.getElementById('gPlus').value = 'no';
   save();
   renderGuests();
+  renderVenueMap();
 }
 
 function deleteGuest(id) {
   state.guests = state.guests.filter(g => g.id !== id);
   save();
   renderGuests();
+  renderVenueMap();
+  if (selectedTableId) renderSeatPanel();
 }
 
 function renderGuests() {
@@ -2370,10 +2538,214 @@ function renderGuests() {
       <td style="color:var(--muted)">${esc(g.contact) || '—'}</td>
       <td><span class="rsvp-badge rsvp-${g.rsvp}">${g.rsvp === 'yes' ? 'Coming' : g.rsvp === 'no' ? 'Declined' : 'Pending'}</span></td>
       <td style="color:var(--muted)">${esc(g.table) || '—'}</td>
+      <td style="color:var(--muted)">${esc(g.chair) || '—'}</td>
       <td>${g.plusOne === 'yes' ? '✓' : '—'}</td>
       <td><button class="vendor-delete" onclick="deleteGuest(${g.id})">✕</button></td>
     </tr>
   `).join('');
+}
+
+// ── TABLES + VENUE MAP ──
+function addTable() {
+  const name = document.getElementById('tblName').value.trim();
+  const seats = Math.max(1, parseInt(document.getElementById('tblSeats').value) || 8);
+  const shape = document.getElementById('tblShape').value;
+  if (!name) return;
+  if (state.tables.find(t => t.name === name)) { toast('A table with that name already exists'); return; }
+  const idx = state.tables.length;
+  state.tables.push({
+    id: Date.now(),
+    name, seats, shape,
+    x: 100 + (idx % 4) * 175,
+    y: 100 + Math.floor(idx / 4) * 160
+  });
+  document.getElementById('tblName').value = '';
+  save();
+  renderTables();
+  renderVenueMap();
+}
+
+function deleteTable(id) {
+  const tbl = state.tables.find(t => t.id === id);
+  if (tbl) state.guests.forEach(g => { if (g.table === tbl.name) { g.table = ''; g.chair = ''; } });
+  state.tables = state.tables.filter(t => t.id !== id);
+  if (selectedTableId === id) { selectedTableId = null; document.getElementById('seatPanel').style.display = 'none'; }
+  save();
+  renderTables();
+  renderVenueMap();
+  renderGuests();
+}
+
+function renderTables() {
+  const el = document.getElementById('tblCards');
+  if (!el) return;
+  el.innerHTML = state.tables.length
+    ? state.tables.map(t => `
+        <div class="tbl-card">
+          <div class="tbl-card-name">${esc(t.name)}</div>
+          <div class="tbl-card-meta">${t.seats} seats · ${t.shape === 'round' ? 'Round' : 'Rectangular'}</div>
+          <button class="tbl-card-del" onclick="deleteTable(${t.id})" title="Remove table">✕</button>
+        </div>`).join('')
+    : '<span style="color:var(--muted);font-size:0.8rem;font-style:italic">No tables yet</span>';
+
+  const sel = document.getElementById('gTable');
+  if (sel) {
+    sel.innerHTML = '<option value="">No table assigned</option>' +
+      state.tables.map(t => `<option value="${esc(t.name)}">${esc(t.name)} (${t.seats} seats)</option>`).join('');
+  }
+}
+
+function renderVenueMap() {
+  const svg = document.getElementById('venueMap');
+  if (!svg) return;
+  Array.from(svg.querySelectorAll('.map-tbl')).forEach(el => el.remove());
+  const hint = document.getElementById('mapEmptyHint');
+  if (hint) hint.style.display = state.tables.length ? 'none' : '';
+  const capEl = document.getElementById('venueCapacity');
+  if (capEl) {
+    const totalSeats = state.tables.reduce((s,t) => s + (parseInt(t.seats)||0), 0);
+    const assigned = state.guests.filter(g => g.table).length;
+    capEl.textContent = state.tables.length ? `${assigned} assigned · ${totalSeats} seats` : '';
+  }
+  const NS = 'http://www.w3.org/2000/svg';
+  state.tables.forEach(tbl => {
+    const seated = state.guests.filter(g => g.table === tbl.name).length;
+    const isSel = tbl.id === selectedTableId;
+    const fill = isSel ? '#E8D5C4' : '#F7EEE7';
+    const stroke = isSel ? '#6B5744' : '#C9A98A';
+    const sw = isSel ? '3' : '2';
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('id', 'tg-' + tbl.id);
+    g.setAttribute('class', 'map-tbl');
+    g.setAttribute('transform', `translate(${tbl.x},${tbl.y})`);
+    g.style.cursor = 'grab';
+    g.addEventListener('mousedown', e => mapDragStart(e, tbl.id));
+    g.addEventListener('touchstart', e => mapDragStart(e, tbl.id), { passive: false });
+    let shape;
+    if (tbl.shape === 'rect') {
+      shape = document.createElementNS(NS, 'rect');
+      shape.setAttribute('x', '-58'); shape.setAttribute('y', '-36');
+      shape.setAttribute('width', '116'); shape.setAttribute('height', '72');
+      shape.setAttribute('rx', '7');
+    } else {
+      shape = document.createElementNS(NS, 'circle');
+      shape.setAttribute('r', '48');
+    }
+    shape.setAttribute('fill', fill);
+    shape.setAttribute('stroke', stroke);
+    shape.setAttribute('stroke-width', sw);
+    g.appendChild(shape);
+    const mkText = (y, txt, size, style) => {
+      const t = document.createElementNS(NS, 'text');
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('dominant-baseline', 'middle');
+      t.setAttribute('y', y);
+      t.setAttribute('font-size', size);
+      if (style === 'label') {
+        t.setAttribute('font-family', 'Georgia,serif');
+        t.setAttribute('font-style', 'italic');
+        t.setAttribute('fill', '#3D2B1F');
+      } else {
+        t.setAttribute('font-family', 'Inter,sans-serif');
+        t.setAttribute('fill', '#9A8778');
+      }
+      t.textContent = txt;
+      return t;
+    };
+    g.appendChild(mkText('-9', tbl.name, '13', 'label'));
+    g.appendChild(mkText('9', seated + '/' + tbl.seats + ' seats', '11', 'meta'));
+    svg.appendChild(g);
+  });
+}
+
+function mapDragStart(e, id) {
+  e.preventDefault();
+  const pt = svgPt(e);
+  const tbl = state.tables.find(t => t.id === id);
+  if (!tbl) return;
+  mapDrag = { id, startX: pt.x, startY: pt.y, origX: tbl.x, origY: tbl.y, moved: false };
+}
+
+function mapDragMove(e) {
+  if (!mapDrag) return;
+  e.preventDefault();
+  const pt = svgPt(e);
+  const dx = pt.x - mapDrag.startX, dy = pt.y - mapDrag.startY;
+  if (Math.abs(dx) > 5 || Math.abs(dy) > 5) mapDrag.moved = true;
+  if (!mapDrag.moved) return;
+  const tbl = state.tables.find(t => t.id === mapDrag.id);
+  if (!tbl) return;
+  tbl.x = Math.max(60, Math.min(740, mapDrag.origX + dx));
+  tbl.y = Math.max(50, Math.min(430, mapDrag.origY + dy));
+  const g = document.getElementById('tg-' + mapDrag.id);
+  if (g) g.setAttribute('transform', `translate(${tbl.x},${tbl.y})`);
+}
+
+function mapDragEnd() {
+  if (!mapDrag) return;
+  if (!mapDrag.moved) {
+    selectedTableId = mapDrag.id;
+    renderVenueMap();
+    renderSeatPanel();
+    document.getElementById('seatPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } else {
+    saveSoon();
+  }
+  mapDrag = null;
+}
+
+function closeSeatPanel() {
+  selectedTableId = null;
+  document.getElementById('seatPanel').style.display = 'none';
+  renderVenueMap();
+}
+
+function renderSeatPanel() {
+  const panel = document.getElementById('seatPanel');
+  if (!panel || !selectedTableId) return;
+  const tbl = state.tables.find(t => t.id === selectedTableId);
+  if (!tbl) { panel.style.display = 'none'; return; }
+  panel.style.display = '';
+  document.getElementById('seatPanelTitle').textContent = `${tbl.name} · ${tbl.seats} seats`;
+  const seated = state.guests.filter(g => g.table === tbl.name);
+  document.getElementById('seatPanelBody').innerHTML = seated.length
+    ? seated.map(g => `
+        <div class="seat-row">
+          <div class="seat-num">${esc(g.chair || '—')}</div>
+          <div class="seat-name">${esc(g.name)}</div>
+          <span class="rsvp-badge rsvp-${g.rsvp}" style="font-size:0.68rem">${g.rsvp === 'yes' ? 'Coming' : g.rsvp === 'no' ? 'Declined' : 'Pending'}</span>
+          <button class="seat-unassign" onclick="unassignGuest(${g.id})" title="Remove from table">✕</button>
+        </div>`).join('')
+    : '<div class="seat-empty">No guests assigned yet</div>';
+  const asel = document.getElementById('seatAssignGuest');
+  const unassigned = state.guests.filter(g => !g.table);
+  asel.innerHTML = '<option value="">Assign guest…</option>' +
+    unassigned.map(g => `<option value="${g.id}">${esc(g.name)}</option>`).join('');
+}
+
+function assignGuestToTable() {
+  const tbl = state.tables.find(t => t.id === selectedTableId);
+  if (!tbl) return;
+  const gid = parseInt(document.getElementById('seatAssignGuest').value);
+  if (!gid) return;
+  const g = state.guests.find(g => g.id === gid);
+  if (!g) return;
+  g.table = tbl.name;
+  g.chair = document.getElementById('seatAssignChair').value.trim();
+  document.getElementById('seatAssignChair').value = '';
+  save();
+  renderGuests();
+  renderSeatPanel();
+  renderVenueMap();
+}
+
+function unassignGuest(id) {
+  const g = state.guests.find(g => g.id === id);
+  if (g) { g.table = ''; g.chair = ''; }
+  save();
+  renderGuests();
+  renderSeatPanel();
+  renderVenueMap();
 }
 
 // ── CHECKLIST ──
