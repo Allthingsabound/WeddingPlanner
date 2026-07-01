@@ -1739,7 +1739,7 @@
           <span>Click a table to assign guests · Drag to rearrange</span>
           <span id="venueCapacity"></span>
         </div>
-        <svg id="venueMap" viewBox="0 0 800 480" xmlns="http://www.w3.org/2000/svg"
+        <svg id="venueMap" viewBox="0 0 800 560" xmlns="http://www.w3.org/2000/svg"
           onmousemove="mapDragMove(event)" onmouseup="mapDragEnd()" onmouseleave="mapDragEnd()"
           ontouchmove="mapDragMove(event)" ontouchend="mapDragEnd()">
           <rect width="800" height="480" fill="#FBF6F0"/>
@@ -2556,8 +2556,8 @@ function addTable() {
   state.tables.push({
     id: Date.now(),
     name, seats, shape,
-    x: 100 + (idx % 4) * 175,
-    y: 100 + Math.floor(idx / 4) * 160
+    x: 110 + (idx % 4) * 180,
+    y: 120 + Math.floor(idx / 4) * 185
   });
   document.getElementById('tblName').value = '';
   save();
@@ -2608,12 +2608,42 @@ function renderVenueMap() {
     capEl.textContent = state.tables.length ? `${assigned} assigned · ${totalSeats} seats` : '';
   }
   const NS = 'http://www.w3.org/2000/svg';
+
+  const mkChair = (parentG, cx, cy, seatNum, guest) => {
+    const c = document.createElementNS(NS, 'circle');
+    c.setAttribute('cx', String(Math.round(cx)));
+    c.setAttribute('cy', String(Math.round(cy)));
+    c.setAttribute('r', '8');
+    c.setAttribute('fill', guest ? '#C9A98A' : '#FBF6F0');
+    c.setAttribute('stroke', guest ? '#6B5744' : '#BDB0A0');
+    c.setAttribute('stroke-width', '1.5');
+    if (guest) {
+      const title = document.createElementNS(NS, 'title');
+      title.textContent = `Seat ${seatNum}: ${guest.name}`;
+      c.appendChild(title);
+    }
+    parentG.appendChild(c);
+    const t = document.createElementNS(NS, 'text');
+    t.setAttribute('x', String(Math.round(cx)));
+    t.setAttribute('y', String(Math.round(cy)));
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('dominant-baseline', 'middle');
+    t.setAttribute('font-size', '6.5');
+    t.setAttribute('font-family', 'Inter,sans-serif');
+    t.setAttribute('fill', guest ? '#3D2B1F' : '#9A8778');
+    t.setAttribute('pointer-events', 'none');
+    t.textContent = String(seatNum);
+    parentG.appendChild(t);
+  };
+
   state.tables.forEach(tbl => {
-    const seated = state.guests.filter(g => g.table === tbl.name).length;
+    const seatedGuests = state.guests.filter(g => g.table === tbl.name);
+    const seats = Math.max(1, parseInt(tbl.seats) || 8);
     const isSel = tbl.id === selectedTableId;
     const fill = isSel ? '#E8D5C4' : '#F7EEE7';
     const stroke = isSel ? '#6B5744' : '#C9A98A';
     const sw = isSel ? '3' : '2';
+
     const g = document.createElementNS(NS, 'g');
     g.setAttribute('id', 'tg-' + tbl.id);
     g.setAttribute('class', 'map-tbl');
@@ -2621,6 +2651,30 @@ function renderVenueMap() {
     g.style.cursor = 'grab';
     g.addEventListener('mousedown', e => mapDragStart(e, tbl.id));
     g.addEventListener('touchstart', e => mapDragStart(e, tbl.id), { passive: false });
+
+    // 1. Chairs (rendered first so table body covers any overlap)
+    if (tbl.shape === 'round') {
+      for (let i = 0; i < seats; i++) {
+        const angle = (2 * Math.PI * i / seats) - Math.PI / 2;
+        const guest = seatedGuests.find(gg => gg.chair === String(i + 1));
+        mkChair(g, Math.cos(angle) * 64, Math.sin(angle) * 64, i + 1, guest);
+      }
+    } else {
+      const halfW = 50, chairY = 52;
+      const topN = Math.ceil(seats / 2), botN = seats - topN;
+      for (let i = 0; i < topN; i++) {
+        const x = topN > 1 ? -halfW + i * (halfW * 2 / (topN - 1)) : 0;
+        const guest = seatedGuests.find(gg => gg.chair === String(i + 1));
+        mkChair(g, x, -chairY, i + 1, guest);
+      }
+      for (let i = 0; i < botN; i++) {
+        const x = botN > 1 ? -halfW + i * (halfW * 2 / (botN - 1)) : 0;
+        const guest = seatedGuests.find(gg => gg.chair === String(topN + i + 1));
+        mkChair(g, x, chairY, topN + i + 1, guest);
+      }
+    }
+
+    // 2. Table surface
     let shape;
     if (tbl.shape === 'rect') {
       shape = document.createElementNS(NS, 'rect');
@@ -2635,12 +2689,14 @@ function renderVenueMap() {
     shape.setAttribute('stroke', stroke);
     shape.setAttribute('stroke-width', sw);
     g.appendChild(shape);
+
+    // 3. Table name + count (on top of everything)
     const mkText = (y, txt, size, style) => {
       const t = document.createElementNS(NS, 'text');
       t.setAttribute('text-anchor', 'middle');
       t.setAttribute('dominant-baseline', 'middle');
-      t.setAttribute('y', y);
-      t.setAttribute('font-size', size);
+      t.setAttribute('y', y); t.setAttribute('font-size', size);
+      t.setAttribute('pointer-events', 'none');
       if (style === 'label') {
         t.setAttribute('font-family', 'Georgia,serif');
         t.setAttribute('font-style', 'italic');
@@ -2653,7 +2709,7 @@ function renderVenueMap() {
       return t;
     };
     g.appendChild(mkText('-9', tbl.name, '13', 'label'));
-    g.appendChild(mkText('9', seated + '/' + tbl.seats + ' seats', '11', 'meta'));
+    g.appendChild(mkText('9', seatedGuests.length + '/' + seats, '11', 'meta'));
     svg.appendChild(g);
   });
 }
@@ -2675,8 +2731,8 @@ function mapDragMove(e) {
   if (!mapDrag.moved) return;
   const tbl = state.tables.find(t => t.id === mapDrag.id);
   if (!tbl) return;
-  tbl.x = Math.max(60, Math.min(740, mapDrag.origX + dx));
-  tbl.y = Math.max(50, Math.min(430, mapDrag.origY + dy));
+  tbl.x = Math.max(75, Math.min(725, mapDrag.origX + dx));
+  tbl.y = Math.max(80, Math.min(480, mapDrag.origY + dy));
   const g = document.getElementById('tg-' + mapDrag.id);
   if (g) g.setAttribute('transform', `translate(${tbl.x},${tbl.y})`);
 }
