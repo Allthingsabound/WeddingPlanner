@@ -2725,68 +2725,57 @@ function deleteAptTask(id) { state.apartment.tasks = state.apartment.tasks.filte
 
 // ── BUDGET BREAKDOWN ──
 const BUDGET_SECTIONS = [
-  { emoji:'🇩🇴', label:'DR Wedding — Ceremony & Reception', amt:6000, items:[
-    { n:'All-inclusive resort package (chapel + garden)', a:6000, note:'DR avg; includes venue, setup, staff' },
-    { n:'Brunch à la carte — food (75 guests)', a:3500, note:'DR resort catering, per head' },
-    { n:'Beverages — non-alcoholic', a:800, note:'Juices, water, coffee, tea' },
-    { n:'Carrot cake + tiramisu', a:400, note:'DR pastry chef, custom order' },
-    { n:'Minimalist florals — bouquet + boutonniere', a:200, note:'Simple tropical arrangement' },
-    { n:'Christian DJ (4–6 hrs)', a:600, note:'Local DR DJ' },
-    { n:'Wedding planner / coordinator', a:1500, note:'Destination specialist' },
-    { n:'Officiant + marriage license (DR)', a:400, note:'Legal or symbolic ceremony' },
-    { n:'Minimalist décor', a:200, note:'Garden venue does the work' },
-    { n:'Wedding insurance', a:350, note:'Destination event policy' },
-    { n:'Vendor gratuities', a:400, note:'15–20% on DR vendors' },
+  { emoji:'⛪', label:'Church Ceremony — Philadelphia', amt:90, items:[
+    { n:'Marriage license — Philadelphia', a:90, note:'City Hall Room 413; cash/money order; both in person' },
+    { n:'Church venue fee', a:0, note:"Your pastor's church — free" },
+    { n:'Officiant', a:0, note:'Your pastor — free' },
+  ]},
+  { emoji:'🎉', label:'Brunch Reception — Philadelphia (50 guests)', amt:2190, items:[
+    { n:'Brunch drop-off catering (50 guests)', a:1500, note:'Old City Breakfast + add-ons; Philadelphia Catering Co.' },
+    { n:'Coffee, juices & beverages', a:250, note:'Non-alcoholic only' },
+    { n:'Tiramisu dessert bowl (50 people)', a:200, note:'Custom order — Termini Bros. or similar Philly bakery' },
+    { n:'Décor & setup — minimal', a:150, note:'Simple florals, candles, signage' },
+    { n:'Venue / location fee', a:0, note:"Pastor's church hall or family home — free" },
+    { n:'Christian DJ or curated playlist', a:0, note:'DIY playlist; or budget separately if hiring' },
   ]},
   { emoji:'👗', label:'Attire & Beauty', amt:2060, items:[
-    { n:'Wedding dress — simple / minimalist', a:900, note:'Boutique or sample sale' },
+    { n:'Wedding dress — simple / minimalist', a:900, note:'Boutique or sample sale; The Knot avg $2,100' },
     { n:'Alterations', a:200, note:'Standard fit adjustments' },
-    { n:'Shoes + accessories', a:200, note:'Minimal, destination vibe' },
-    { n:'Linen suit (groom)', a:300, note:'Casual destination look' },
-    { n:'Hair & makeup artist', a:450, note:'Philadelphia; $190–$225 per service' },
+    { n:'Shoes + accessories', a:200, note:'Minimal' },
+    { n:'Linen suit (groom)', a:300, note:'Casual relaxed look' },
+    { n:'Hair & makeup artist — bride', a:450, note:'Philly; Capelli & Trucco or similar; $190–$225 per service' },
     { n:'Hair & makeup trial', a:150, note:'Pre-wedding test session' },
     { n:'Groom grooming', a:60, note:'Haircut + styling day-of' },
   ]},
   { emoji:'💍', label:'Wedding Rings', amt:600, items:[
-    { n:'Bride\'s plain 14k gold band', a:300, note:'Simple, minimalist; Etsy or local jeweler' },
-    { n:'Groom\'s plain 14k gold band', a:300, note:'Classic half-round dome; solid 14k' },
+    { n:"Bride's plain 14k gold band", a:300, note:'Simple minimalist; Etsy or local Philadelphia jeweler' },
+    { n:"Groom's plain 14k gold band", a:300, note:'Classic half-round dome; solid 14k gold' },
   ]},
-  { emoji:'📷', label:'Photography & Videography', amt:1900, items:[
-    { n:'Photographer — local DR vendor', a:1000, note:'Full day 8 hrs; digital gallery' },
-    { n:'Videographer — local DR vendor', a:900, note:'Highlight reel + feature film; digital' },
-  ]},
-  { emoji:'✈️', label:"Couple's Travel — PHL → DR", amt:1220, items:[
-    { n:'Flights × 2 round-trip (PHL → PUJ)', a:700, note:'Off-peak; book early' },
-    { n:'Hotel night at resort (pre/post)', a:220, note:'1 night on-site' },
-    { n:'Airport transfers', a:80, note:'Round-trip PUJ ↔ resort' },
-    { n:'Travel + medical insurance', a:220, note:"Couple's policy" },
-  ]},
-  { emoji:'🎉', label:'Philadelphia Brunch Reception', amt:2190, items:[
-    { n:'Brunch drop-off catering (50 guests)', a:1500, note:'Old City Breakfast + add-ons, PHL Catering Co.' },
-    { n:'Coffee, juices & beverages', a:250, note:'Non-alcoholic only' },
-    { n:'Tiramisu dessert bowl (50 people)', a:200, note:'Custom order — Termini Bros. or similar' },
-    { n:'Marriage license — Philadelphia', a:90, note:'City Hall Room 413; cash or money order' },
-    { n:'Venue / location fee', a:0, note:"Pastor's church or family home — free" },
-    { n:'Décor & setup — minimal', a:150, note:'Simple florals, candles, signage' },
+  { emoji:'📷', label:'Photography & Videography', amt:2900, items:[
+    { n:'Photographer — Philadelphia', a:2000, note:'Half-day 4–5 hrs; mid-range Philly market' },
+    { n:'Videographer — Philadelphia', a:900, note:'Highlight reel; digital delivery only' },
   ]},
   { emoji:'🥂', label:'Pre-Wedding Events', amt:900, items:[
     { n:'Engagement party', a:500, note:'Home or casual restaurant; Philly/NJ' },
     { n:'Bridal shower', a:400, note:'Venue + food + décor; ~15–25 guests' },
   ]},
-  { emoji:'🌅', label:'Honeymoon — Playa del Carmen (4 nights)', amt:2000, items:[
-    { n:'Flights × 2 round-trip (PHL → CUN)', a:700, note:'Book early; Frontier/JetBlue' },
-    { n:'All-inclusive adults-only resort (4 nights)', a:900, note:'Sandos Playacar, Grand Riviera Princess, etc.' },
-    { n:'Airport transfer (CUN → Playa)', a:50, note:'ADO bus or shared shuttle' },
-    { n:'Excursions + spending money', a:200, note:'Cenotes, Tulum day trip, etc.' },
-    { n:'Travel insurance', a:150, note:'Separate from wedding trip' },
+  { emoji:'✈️', label:'Guest Flights — 2 people from DR', amt:1000, items:[
+    { n:'Round-trip flights × 2 (PUJ → PHL)', a:1000, note:'March/April; book early; budget $500 pp rt' },
   ]},
-  { emoji:'🏠', label:'First Home — Philadelphia', amt:5080, items:[
-    { n:'Security deposit (1 month)', a:1300, note:'NE Philly; Mayfair/Somerton/Bustleton ~$1,300/mo' },
-    { n:'First month\'s rent', a:1300, note:'Good parking; safe neighborhood' },
-    { n:'Phase 1 furniture (essentials only)', a:1800, note:'Mattress, sofa, dining set, dressers — new + secondhand' },
+  { emoji:'🌅', label:'Honeymoon — Playa del Carmen (4 nights)', amt:2000, items:[
+    { n:'Flights × 2 round-trip (PHL → CUN)', a:700, note:'Book early; Frontier/JetBlue; ~$350 pp' },
+    { n:'All-inclusive adults-only resort (4 nights)', a:900, note:'Sandos Playacar, Grand Riviera Princess, etc.' },
+    { n:'Airport transfer (CUN → Playa del Carmen)', a:50, note:'ADO bus or shared shuttle' },
+    { n:'Excursions + spending money', a:200, note:'Cenotes, Tulum day trip, etc.' },
+    { n:'Travel insurance', a:150, note:'Couple; trip cancellation + medical' },
+  ]},
+  { emoji:'🏠', label:'First Home — Northeast Philadelphia', amt:5080, items:[
+    { n:'Security deposit (1 month)', a:1300, note:'Mayfair / Somerton / Bustleton; ~$1,300/mo' },
+    { n:"First month's rent", a:1300, note:'Good parking; safe neighborhood' },
+    { n:'Phase 1 furniture — essentials only', a:1800, note:'Mattress, sofa, dining set, dressers; new + secondhand mix' },
     { n:'Moving costs', a:400, note:'U-Haul or small local mover' },
     { n:'Utility deposits + internet setup', a:200, note:'Electric, gas, Xfinity/Verizon' },
-    { n:'Renter\'s insurance (first year)', a:180, note:'~$15/mo paid upfront' },
+    { n:"Renter's insurance — first year", a:180, note:'~$15/mo paid upfront' },
     { n:'Kitchen essentials + household basics', a:200, note:'Target/Walmart run' },
   ]},
 ];
@@ -2799,7 +2788,7 @@ function buildBudget() {
       <div class="budget-sec-hdr" onclick="toggleBudgetSec(${i})">
         <div class="budget-sec-title">${sec.emoji} ${esc(sec.label)}</div>
         <div class="budget-sec-right">
-          <div class="budget-sec-amt">$${sec.amt.toLocaleString()}</div>
+          <div class="budget-sec-amt">${sec.amt > 0 ? '$' + sec.amt.toLocaleString() : 'free'}</div>
           <div class="budget-chev" id="bchev-${i}">▾</div>
         </div>
       </div>
