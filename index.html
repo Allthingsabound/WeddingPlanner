@@ -1526,6 +1526,21 @@
       Continue with Google
     </button>
   </form>
+
+  <!-- Shown to new users after sign-in to start or join a wedding -->
+  <div class="lock-card" id="setupCard" style="display:none">
+    <div class="lock-emblem">♡</div>
+    <div class="lock-title">Almost <span>there!</span></div>
+    <p class="lock-sub">Start a new planner or join your partner's?</p>
+    <button class="btn-primary lock-btn" type="button" onclick="startNewWedding()">Start a new planner</button>
+    <div class="lock-divider">or</div>
+    <input class="lock-input" id="joinCode" type="text" placeholder="Enter invite code (e.g. ROSE-4821)" autocapitalize="characters" autocorrect="off" spellcheck="false" />
+    <button class="btn-google" type="button" onclick="joinWedding()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Join partner's planner
+    </button>
+    <div class="lock-error" id="setupError"></div>
+  </div>
 </div>
 
 <nav>
@@ -2211,6 +2226,8 @@
   <label class="link-btn" tabindex="0">Restore from backup<input type="file" accept="application/json,.json" onchange="importData(this)" hidden /></label>
   <span class="dot">·</span>
   <button class="link-btn" onclick="lockSite()">Lock</button>
+  <span class="dot" id="inviteCodeDot" style="display:none">·</span>
+  <span id="weddingCodeDisplay" style="display:none">Invite code: <strong id="weddingCodeText"></strong> — <button class="link-btn" onclick="copyWeddingCode()">Copy</button></span>
 </footer>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -2258,7 +2275,8 @@ let activeNoteId = null;
 // ── FIREBASE REFS ──
 const auth = firebase.auth();
 const db   = firebase.firestore();
-let currentUser  = null;
+let currentUser    = null;
+let currentWeddingId = null;
 let isSignUpMode = false;
 
 // Escape user-entered text before putting it into innerHTML / attributes,
@@ -2402,21 +2420,21 @@ async function forgotPassword() {
 // ── FIRESTORE SYNC ──
 let _firestoreSaveTimer = null;
 function saveToFirestore() {
-  if (!currentUser) return;
+  if (!currentUser || !currentWeddingId) return;
   clearTimeout(_firestoreSaveTimer);
   _firestoreSaveTimer = setTimeout(async () => {
     try {
-      await db.collection('users').doc(currentUser.uid).set({ data: state });
+      await db.collection('weddings').doc(currentWeddingId).set({ data: state });
     } catch (ex) {
       console.warn('Firestore save failed:', ex);
     }
   }, 800);
 }
 
-async function loadFromFirestore() {
-  if (!currentUser) return;
+async function loadWeddingData() {
+  if (!currentUser || !currentWeddingId) return;
   try {
-    const snap = await db.collection('users').doc(currentUser.uid).get();
+    const snap = await db.collection('weddings').doc(currentWeddingId).get();
     if (snap.exists && snap.data() && snap.data().data) {
       const remote = snap.data().data;
       Object.assign(state, remote);
@@ -2426,7 +2444,6 @@ async function loadFromFirestore() {
       renderAll();
       seedChecklist();
       renderChecklist();
-      // Restore last active tab
       if (state.activePage && state.activePage !== 'vision') {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
@@ -2436,11 +2453,85 @@ async function loadFromFirestore() {
         if (btn) btn.classList.add('active');
       }
     } else {
-      // First sign-in: upload existing local data to the cloud
-      await db.collection('users').doc(currentUser.uid).set({ data: state });
+      // Wedding doc doesn't exist yet — upload current local data
+      await db.collection('weddings').doc(currentWeddingId).set({ data: state });
     }
+    showWeddingCode();
   } catch (ex) {
     console.warn('Firestore load failed:', ex);
+  }
+}
+
+function generateWeddingCode() {
+  const words = ['ROSE','LOVE','RING','VEIL','KISS','DOVE','LACE','SILK','LUNA','EDEN'];
+  return words[Math.floor(Math.random() * words.length)] + '-' + (Math.floor(Math.random() * 9000) + 1000);
+}
+
+function showWeddingSetup() {
+  document.getElementById('lockForm').style.display = 'none';
+  document.getElementById('setupCard').style.display = '';
+}
+
+function hideSetupScreen() {
+  document.getElementById('setupCard').style.display = 'none';
+  document.getElementById('lockForm').style.display = '';
+}
+
+function showWeddingCode() {
+  if (!currentWeddingId) return;
+  document.getElementById('weddingCodeText').textContent = currentWeddingId;
+  document.getElementById('weddingCodeDisplay').style.display = '';
+  document.getElementById('inviteCodeDot').style.display = '';
+}
+
+async function copyWeddingCode() {
+  try {
+    await navigator.clipboard.writeText(currentWeddingId);
+    toast('Invite code copied!');
+  } catch (ex) {
+    toast('Your code: ' + currentWeddingId);
+  }
+}
+
+async function startNewWedding() {
+  const errEl = document.getElementById('setupError');
+  errEl.textContent = '';
+  try {
+    const code = generateWeddingCode();
+    await db.collection('users').doc(currentUser.uid).set({ weddingId: code });
+    await db.collection('weddings').doc(code).set({ data: state });
+    currentWeddingId = code;
+    hideSetupScreen();
+    document.documentElement.classList.add('wh-authed');
+    renderAll(); seedChecklist(); renderChecklist();
+    showWeddingCode();
+  } catch (ex) {
+    errEl.textContent = 'Something went wrong. Please try again.';
+  }
+}
+
+async function joinWedding() {
+  const code = document.getElementById('joinCode').value.trim().toUpperCase();
+  const errEl = document.getElementById('setupError');
+  errEl.textContent = '';
+  if (!code) { errEl.textContent = 'Enter an invite code first.'; return; }
+  try {
+    const snap = await db.collection('weddings').doc(code).get();
+    if (!snap.exists) { errEl.textContent = 'Code not found — double-check and try again.'; return; }
+    await db.collection('users').doc(currentUser.uid).set({ weddingId: code });
+    currentWeddingId = code;
+    const remote = snap.data().data;
+    Object.assign(state, remote);
+    if (!state.tables) state.tables = [];
+    state.guests.forEach(g => { if (g.chair === undefined) g.chair = ''; });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    hideSetupScreen();
+    document.documentElement.classList.add('wh-authed');
+    renderAll(); seedChecklist(); renderChecklist();
+    showWeddingCode();
+    toast('Joined! You\'re now sharing this planner ♡');
+  } catch (ex) {
+    errEl.textContent = 'Something went wrong. Please try again.';
   }
 }
 
@@ -2486,6 +2577,7 @@ async function tryUnlock(e) {
 }
 
 function lockSite() {
+  currentWeddingId = null;
   auth.signOut(); // onAuthStateChanged will show the lock screen
 }
 
@@ -3802,29 +3894,43 @@ function seedChecklist() {
 }
 
 // Firebase auth state drives all rendering and cloud sync
-auth.onAuthStateChanged(user => {
+auth.onAuthStateChanged(async user => {
   if (user) {
     currentUser = user;
     localStorage.setItem('wh_fb_auth', '1');
-    document.documentElement.classList.add('wh-authed');
     document.getElementById('lockError').textContent = '';
-    // Render with local data first (instant), then sync from cloud
-    renderAll();
-    seedChecklist();
-    renderChecklist();
-    if (state.activePage && state.activePage !== 'vision') {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
-      const _target = document.getElementById('page-' + state.activePage);
-      const _btn = document.querySelector('.nav-tabs button[data-page="' + state.activePage + '"]');
-      if (_target) _target.classList.add('active');
-      if (_btn) _btn.classList.add('active');
+    try {
+      const userDoc = await db.collection('users').doc(user.uid).get();
+      if (userDoc.exists && userDoc.data() && userDoc.data().weddingId) {
+        // Returning user with an existing wedding — show the app
+        currentWeddingId = userDoc.data().weddingId;
+        document.documentElement.classList.add('wh-authed');
+        renderAll(); seedChecklist(); renderChecklist();
+        if (state.activePage && state.activePage !== 'vision') {
+          document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+          document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
+          const _target = document.getElementById('page-' + state.activePage);
+          const _btn = document.querySelector('.nav-tabs button[data-page="' + state.activePage + '"]');
+          if (_target) _target.classList.add('active');
+          if (_btn) _btn.classList.add('active');
+        }
+        loadWeddingData(); // Sync latest cloud data in background
+      } else {
+        // New user — keep lock screen up, switch to setup card
+        document.documentElement.classList.remove('wh-authed');
+        showWeddingSetup();
+      }
+    } catch (ex) {
+      // Fallback on network error — show app with local data
+      document.documentElement.classList.add('wh-authed');
+      renderAll(); seedChecklist(); renderChecklist();
     }
-    loadFromFirestore(); // Sync latest cloud data in background
   } else {
     currentUser = null;
+    currentWeddingId = null;
     localStorage.removeItem('wh_fb_auth');
     document.documentElement.classList.remove('wh-authed');
+    hideSetupScreen();
     setTimeout(() => {
       const el = document.getElementById('lockUser');
       if (el) el.focus();
