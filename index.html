@@ -1538,9 +1538,9 @@
     </div>
 
     <h1 class="section-title" style="margin-top:2rem">The <em>Vision</em></h1>
-    <p class="section-sub">Paste an image URL from Pinterest, Google, or anywhere else</p>
+    <p class="section-sub">On Pinterest: right-click an image → "Copy image address" → paste below. Works with any image URL.</p>
     <div class="vision-add">
-      <input type="url" id="visionUrl" placeholder="https://i.pinimg.com/..." />
+      <input type="url" id="visionUrl" placeholder="Paste image URL (right-click → Copy image address on Pinterest)" />
       <input type="text" id="visionNote" placeholder="Note (optional)" style="max-width:220px" />
       <button class="btn-primary" onclick="addVisionCard()">Add Image</button>
     </div>
@@ -2369,11 +2369,22 @@ function showPage(id, btn) {
 
 // ── VISION ──
 const TILTS = [-1.8, 1.2, -0.7, 2.1, -1.4, 0.9, -2.3, 1.6];
+const WESERV = 'https://images.weserv.nl/?url=';
+
+function proxiedSrc(url) {
+  if (!url || url.startsWith('data:') || url.startsWith(WESERV)) return url;
+  if (/i\.pinimg\.com/i.test(url)) return WESERV + encodeURIComponent(url);
+  return url;
+}
 
 function addVisionCard() {
   const url = document.getElementById('visionUrl').value.trim();
   const note = document.getElementById('visionNote').value.trim();
   if (!url) return;
+  if (/pinterest\.com\/(pin|.*\/pins)\//i.test(url)) {
+    toast('That\'s a Pinterest page link, not an image. Right-click the image on Pinterest → "Copy image address", then paste that URL.');
+    return;
+  }
   state.vision.push({ url, note, id: Date.now() });
   document.getElementById('visionUrl').value = '';
   document.getElementById('visionNote').value = '';
@@ -2391,7 +2402,8 @@ function renderVision() {
   }
   grid.innerHTML = state.vision.map((v, i) => `
     <div class="vision-card" style="--tilt:${TILTS[i % TILTS.length]}deg">
-      <img src="${esc(v.url)}" alt="Vision" loading="lazy" onerror="this.style.display='none'" />
+      <img src="${esc(proxiedSrc(v.url))}" data-orig="${esc(v.url)}" alt="Vision" loading="lazy"
+        onerror="if(!this.dataset.p){this.dataset.p=1;this.src='${WESERV}'+encodeURIComponent(this.dataset.orig)}else{this.style.display='none'}" />
       <div class="vision-card-footer">
         <input class="vision-card-note" value="${esc(v.note)}" placeholder="Add a note…" onchange="updateVisionNote(${v.id}, this.value)" />
       </div>
