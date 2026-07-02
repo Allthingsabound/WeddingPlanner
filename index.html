@@ -1486,6 +1486,16 @@
   .lock-links { display:flex; justify-content:space-between; gap:0.5rem; font-size:0.76rem; flex-wrap:wrap; margin-top:-0.1rem; }
   .lock-links button { color:var(--muted); transition:color 0.2s; }
   .lock-links button:hover { color:var(--mocha); }
+  .lock-divider { display:flex; align-items:center; gap:0.75rem; color:var(--muted); font-size:0.75rem; }
+  .lock-divider::before, .lock-divider::after { content:''; flex:1; height:1px; background:var(--blush); }
+  .btn-google {
+    width:100%; display:flex; align-items:center; justify-content:center; gap:0.6rem;
+    padding:0.75rem; border-radius:10px; border:1.5px solid var(--blush);
+    background:white; font-family:'Inter',sans-serif; font-size:0.88rem; font-weight:500;
+    color:var(--text); cursor:pointer; transition:border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  }
+  .btn-google:hover { border-color:var(--sand); background:var(--warm-white); box-shadow:0 2px 8px rgba(107,87,68,0.12); }
+  .btn-google svg { flex-shrink:0; }
 </style>
 <script>
   // Pre-paint gate: show app optimistically if this device was previously signed in.
@@ -1510,6 +1520,11 @@
       <button type="button" class="link-btn" id="forgotBtn" onclick="forgotPassword()">Forgot password?</button>
       <button type="button" class="link-btn" id="switchModeBtn" onclick="switchLockMode()">Create an account</button>
     </div>
+    <div class="lock-divider">or</div>
+    <button type="button" class="btn-google" onclick="signInWithGoogle()">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z"/></svg>
+      Continue with Google
+    </button>
   </form>
 </div>
 
@@ -2348,6 +2363,21 @@ function switchLockMode() {
     switchBtn.textContent = 'Create an account';
     forgotBtn.style.display = '';
     sub.textContent = 'Sign in to continue';
+  }
+}
+
+async function signInWithGoogle() {
+  const errEl = document.getElementById('lockError');
+  errEl.textContent = '';
+  errEl.style.color = 'var(--danger)';
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await auth.signInWithPopup(provider);
+    // onAuthStateChanged handles the rest
+  } catch (ex) {
+    if (ex.code !== 'auth/popup-closed-by-user') {
+      errEl.textContent = firebaseErrorMsg(ex.code);
+    }
   }
 }
 
