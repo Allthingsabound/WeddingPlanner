@@ -1496,6 +1496,24 @@
   }
   .btn-google:hover { border-color:var(--sand); background:var(--warm-white); box-shadow:0 2px 8px rgba(107,87,68,0.12); }
   .btn-google svg { flex-shrink:0; }
+  .sync-modal {
+    position:fixed; inset:0; z-index:500;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(61,43,31,0.40); backdrop-filter:blur(5px);
+    padding:1.5rem;
+  }
+  .sync-modal-card {
+    background:white; border-radius:var(--radius-lg);
+    padding:2rem 1.75rem; width:100%; max-width:340px;
+    box-shadow:var(--shadow-lg);
+    display:flex; flex-direction:column; gap:0.85rem;
+    animation:pageIn 0.3s var(--ease) both;
+  }
+  .sync-modal-title {
+    font-family:'Cormorant Garamond',serif;
+    font-size:1.6rem; font-weight:300; color:var(--mocha); text-align:center;
+  }
+  .sync-modal-sub { font-size:0.82rem; color:var(--muted); text-align:center; margin-top:-0.3rem; }
 </style>
 <script>
   // Pre-paint gate: show app optimistically if this device was previously signed in.
@@ -2226,9 +2244,23 @@
   <label class="link-btn" tabindex="0">Restore from backup<input type="file" accept="application/json,.json" onchange="importData(this)" hidden /></label>
   <span class="dot">·</span>
   <button class="link-btn" onclick="lockSite()">Lock</button>
-  <span class="dot" id="inviteCodeDot" style="display:none">·</span>
-  <span id="weddingCodeDisplay" style="display:none">Invite code: <strong id="weddingCodeText"></strong> — <button class="link-btn" onclick="copyWeddingCode()">Copy</button></span>
+  <span class="dot">·</span>
+  <button class="link-btn" onclick="getInviteCode()">Account Link</button>
+  <span class="dot">·</span>
+  <button class="link-btn" onclick="openSyncModal()">Account Sync</button>
 </footer>
+
+<!-- Account Sync modal -->
+<div class="sync-modal" id="syncModal" style="display:none" onclick="if(event.target===this)closeSyncModal()">
+  <div class="sync-modal-card">
+    <div class="sync-modal-title">Account <em>Sync</em></div>
+    <p class="sync-modal-sub">Enter your partner's invite code to share their planner</p>
+    <input class="lock-input" id="syncCodeInput" type="text" placeholder="e.g. ROSE-4821" autocapitalize="characters" autocorrect="off" spellcheck="false" />
+    <button class="btn-primary lock-btn" onclick="syncWithCode()">Sync Now</button>
+    <button class="btn-ghost" style="width:100%" onclick="closeSyncModal()">Cancel</button>
+    <div class="lock-error" id="syncError"></div>
+  </div>
+</div>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
@@ -2493,6 +2525,61 @@ async function copyWeddingCode() {
     toast('Invite code copied!');
   } catch (ex) {
     toast('Your code: ' + currentWeddingId);
+  }
+}
+
+async function getInviteCode() {
+  if (!currentUser) return;
+  if (currentWeddingId) {
+    // Already have a code — just copy it
+    await copyWeddingCode();
+    return;
+  }
+  // Generate a fresh code and save it
+  try {
+    const code = generateWeddingCode();
+    await db.collection('users').doc(currentUser.uid).set({ weddingId: code });
+    await db.collection('weddings').doc(code).set({ data: state });
+    currentWeddingId = code;
+    showWeddingCode();
+    toast('Your invite code: ' + code + ' — tap Account Link to copy');
+  } catch (ex) {
+    toast('Could not create code. Check your connection.');
+  }
+}
+
+function openSyncModal() {
+  document.getElementById('syncModal').style.display = 'flex';
+  document.getElementById('syncCodeInput').value = '';
+  document.getElementById('syncError').textContent = '';
+  setTimeout(() => document.getElementById('syncCodeInput').focus(), 100);
+}
+
+function closeSyncModal() {
+  document.getElementById('syncModal').style.display = 'none';
+}
+
+async function syncWithCode() {
+  const code = document.getElementById('syncCodeInput').value.trim().toUpperCase();
+  const errEl = document.getElementById('syncError');
+  errEl.textContent = '';
+  if (!code) { errEl.textContent = 'Enter an invite code first.'; return; }
+  try {
+    const snap = await db.collection('weddings').doc(code).get();
+    if (!snap.exists) { errEl.textContent = 'Code not found — double-check and try again.'; return; }
+    await db.collection('users').doc(currentUser.uid).set({ weddingId: code });
+    currentWeddingId = code;
+    const remote = snap.data().data;
+    Object.assign(state, remote);
+    if (!state.tables) state.tables = [];
+    state.guests.forEach(g => { if (g.chair === undefined) g.chair = ''; });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    closeSyncModal();
+    renderAll(); seedChecklist(); renderChecklist();
+    showWeddingCode();
+    toast('Synced! You\'re now sharing this planner ♡');
+  } catch (ex) {
+    errEl.textContent = 'Something went wrong. Please try again.';
   }
 }
 
