@@ -2355,6 +2355,8 @@ function firebaseErrorMsg(code) {
     case 'auth/weak-password': return 'Password must be at least 6 characters.';
     case 'auth/too-many-requests': return 'Too many attempts. Try again later.';
     case 'auth/network-request-failed': return 'Network error. Check your connection.';
+    case 'auth/unauthorized-domain': return 'This domain isn\'t authorized yet — add it in Firebase Console → Authentication → Settings → Authorized domains.';
+    case 'auth/popup-blocked': return 'Popup was blocked. Try the Google button again or use email/password.';
     default: return 'Something went wrong. Please try again.';
   }
 }
@@ -2390,12 +2392,11 @@ async function signInWithGoogle() {
   errEl.style.color = 'var(--danger)';
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
-    await auth.signInWithPopup(provider);
-    // onAuthStateChanged handles the rest
+    // Use redirect (works reliably on all mobile browsers; no popup needed)
+    await auth.signInWithRedirect(provider);
   } catch (ex) {
-    if (ex.code !== 'auth/popup-closed-by-user') {
-      errEl.textContent = firebaseErrorMsg(ex.code);
-    }
+    console.error('Google sign-in error:', ex.code, ex.message);
+    errEl.textContent = firebaseErrorMsg(ex.code);
   }
 }
 
@@ -3892,6 +3893,15 @@ function seedChecklist() {
   if (!state.tables) state.tables = [];
   state.guests.forEach(g => { if (g.chair === undefined) g.chair = ''; });
 }
+
+// Handle returning from Google redirect sign-in
+auth.getRedirectResult().catch(ex => {
+  if (ex.code && ex.code !== 'auth/no-auth-event') {
+    console.error('Redirect result error:', ex.code, ex.message);
+    const errEl = document.getElementById('lockError');
+    if (errEl) errEl.textContent = firebaseErrorMsg(ex.code);
+  }
+});
 
 // Firebase auth state drives all rendering and cloud sync
 auth.onAuthStateChanged(async user => {
