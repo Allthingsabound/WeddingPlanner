@@ -1483,10 +1483,14 @@
   .lock-error { min-height: 1.05rem; font-size: 0.78rem; color: var(--danger); }
   @keyframes shake { 10%,90%{transform:translateX(-1px)} 20%,80%{transform:translateX(2px)} 30%,50%,70%{transform:translateX(-5px)} 40%,60%{transform:translateX(5px)} }
   .lock-card.shake { animation: shake 0.4s; }
+  .lock-links { display:flex; justify-content:space-between; gap:0.5rem; font-size:0.76rem; flex-wrap:wrap; margin-top:-0.1rem; }
+  .lock-links button { color:var(--muted); transition:color 0.2s; }
+  .lock-links button:hover { color:var(--mocha); }
 </style>
 <script>
-  // Pre-paint gate: reveal the app only if this device has unlocked before.
-  try { if (localStorage.getItem('wh_auth_v1') === '1') document.documentElement.classList.add('wh-authed'); } catch (e) {}
+  // Pre-paint gate: show app optimistically if this device was previously signed in.
+  // Firebase confirms the session async and corrects if it has expired.
+  try { if (localStorage.getItem('wh_fb_auth') === '1') document.documentElement.classList.add('wh-authed'); } catch (e) {}
 </script>
 </head>
 <body>
@@ -1496,11 +1500,16 @@
   <form class="lock-card" id="lockForm" onsubmit="return tryUnlock(event)">
     <div class="lock-emblem">♡</div>
     <div class="lock-title">Our <span>Wedding</span></div>
-    <p class="lock-sub">Please sign in to continue</p>
-    <input class="lock-input" id="lockUser" type="text" placeholder="Username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" />
+    <p class="lock-sub" id="lockSub">Sign in to continue</p>
+    <input class="lock-input" id="lockUser" type="email" placeholder="Email address" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" />
     <input class="lock-input" id="lockPass" type="password" placeholder="Password" autocomplete="current-password" />
-    <button class="btn-primary lock-btn" type="submit">Unlock</button>
+    <input class="lock-input" id="lockPassConfirm" type="password" placeholder="Confirm password" autocomplete="new-password" style="display:none" />
+    <button class="btn-primary lock-btn" type="submit" id="lockSubmitBtn">Sign In</button>
     <div class="lock-error" id="lockError"></div>
+    <div class="lock-links">
+      <button type="button" class="link-btn" id="forgotBtn" onclick="forgotPassword()">Forgot password?</button>
+      <button type="button" class="link-btn" id="switchModeBtn" onclick="switchLockMode()">Create an account</button>
+    </div>
   </form>
 </div>
 
@@ -2180,7 +2189,7 @@
 </main>
 
 <footer class="app-footer">
-  <span>🔒 Everything is saved privately on this device.</span>
+  <span>☁️ Everything is saved securely in the cloud.</span>
   <span class="dot">·</span>
   <button class="link-btn" onclick="exportData()">Download a backup</button>
   <span class="dot">·</span>
@@ -2190,6 +2199,27 @@
 </footer>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<!-- Firebase SDK (compat build — works as global `firebase` object) -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+// ── FIREBASE SETUP ──
+// Step 1: Go to https://console.firebase.google.com → Create a project
+// Step 2: Project Settings → Add App → Web → copy the config values below
+// Step 3: Authentication → Sign-in method → Enable "Email/Password"
+// Step 4: Firestore Database → Create database → Start in test mode
+const firebaseConfig = {
+  apiKey:            "PASTE_YOUR_API_KEY_HERE",
+  authDomain:        "PASTE_YOUR_PROJECT_ID.firebaseapp.com",
+  projectId:         "PASTE_YOUR_PROJECT_ID_HERE",
+  storageBucket:     "PASTE_YOUR_PROJECT_ID.firebasestorage.app",
+  messagingSenderId: "PASTE_YOUR_MESSAGING_SENDER_ID_HERE",
+  appId:             "PASTE_YOUR_APP_ID_HERE"
+};
+firebase.initializeApp(firebaseConfig);
+</script>
 
 <script>
 // ── STATE ──
@@ -2210,6 +2240,12 @@ let state = {
 const STORAGE_KEY = 'weddingHub_airy_v1';
 let activeNoteId = null;
 
+// ── FIREBASE REFS ──
+const auth = firebase.auth();
+const db   = firebase.firestore();
+let currentUser  = null;
+let isSignUpMode = false;
+
 // Escape user-entered text before putting it into innerHTML / attributes,
 // so notes or names containing < > " ' & can't break the layout.
 function esc(s) {
@@ -2220,6 +2256,7 @@ function esc(s) {
 
 function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  saveToFirestore();
 }
 
 // Debounced save for keystroke-heavy fields (honeymoon, affordability, etc.)
@@ -2274,50 +2311,152 @@ function importData(input) {
 }
 
 // ── ACCESS GATE (soft client-side lock — a deterrent, not bank-grade security) ──
-const AUTH = {
-  salt: '82b872c1bd6fc7ccbbcde4517a5014b6',
-  iter: 150000,
-  hash: '8fdb5a6ea91ac0c0160a7fbdfeea6781db34e17c2b3b372bbac0db21b6432377'
-};
+// ── AUTH HELPERS ──
+function firebaseErrorMsg(code) {
+  switch (code) {
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential': return 'Incorrect email or password.';
+    case 'auth/email-already-in-use': return 'An account with that email already exists.';
+    case 'auth/invalid-email': return 'Please enter a valid email address.';
+    case 'auth/weak-password': return 'Password must be at least 6 characters.';
+    case 'auth/too-many-requests': return 'Too many attempts. Try again later.';
+    case 'auth/network-request-failed': return 'Network error. Check your connection.';
+    default: return 'Something went wrong. Please try again.';
+  }
+}
 
-async function deriveHash(user, pass) {
-  const enc = new TextEncoder();
-  const cred = user.trim().toLowerCase() + ':' + pass;
-  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(cred), 'PBKDF2', false, ['deriveBits']);
-  const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt: enc.encode(AUTH.salt), iterations: AUTH.iter, hash: 'SHA-256' },
-    keyMaterial, 256
-  );
-  return Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2, '0')).join('');
+function switchLockMode() {
+  isSignUpMode = !isSignUpMode;
+  const confirmInput = document.getElementById('lockPassConfirm');
+  const submitBtn    = document.getElementById('lockSubmitBtn');
+  const switchBtn    = document.getElementById('switchModeBtn');
+  const forgotBtn    = document.getElementById('forgotBtn');
+  const sub          = document.getElementById('lockSub');
+  const errEl        = document.getElementById('lockError');
+  errEl.textContent = '';
+  errEl.style.color = 'var(--danger)';
+  if (isSignUpMode) {
+    confirmInput.style.display = '';
+    submitBtn.textContent = 'Create Account';
+    switchBtn.textContent = 'Sign in instead';
+    forgotBtn.style.display = 'none';
+    sub.textContent = 'Create your account';
+  } else {
+    confirmInput.style.display = 'none';
+    submitBtn.textContent = 'Sign In';
+    switchBtn.textContent = 'Create an account';
+    forgotBtn.style.display = '';
+    sub.textContent = 'Sign in to continue';
+  }
+}
+
+async function forgotPassword() {
+  const email = document.getElementById('lockUser').value.trim();
+  const errEl = document.getElementById('lockError');
+  errEl.style.color = 'var(--danger)';
+  if (!email) {
+    errEl.textContent = 'Enter your email address above first.';
+    errEl.style.color = 'var(--sand)';
+    return;
+  }
+  try {
+    await auth.sendPasswordResetEmail(email);
+    errEl.textContent = 'Password reset email sent — check your inbox!';
+    errEl.style.color = 'var(--success)';
+  } catch (ex) {
+    errEl.textContent = firebaseErrorMsg(ex.code);
+  }
+}
+
+// ── FIRESTORE SYNC ──
+let _firestoreSaveTimer = null;
+function saveToFirestore() {
+  if (!currentUser) return;
+  clearTimeout(_firestoreSaveTimer);
+  _firestoreSaveTimer = setTimeout(async () => {
+    try {
+      await db.collection('users').doc(currentUser.uid).set({ data: state });
+    } catch (ex) {
+      console.warn('Firestore save failed:', ex);
+    }
+  }, 800);
+}
+
+async function loadFromFirestore() {
+  if (!currentUser) return;
+  try {
+    const snap = await db.collection('users').doc(currentUser.uid).get();
+    if (snap.exists && snap.data() && snap.data().data) {
+      const remote = snap.data().data;
+      Object.assign(state, remote);
+      if (!state.tables) state.tables = [];
+      state.guests.forEach(g => { if (g.chair === undefined) g.chair = ''; });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderAll();
+      seedChecklist();
+      renderChecklist();
+      // Restore last active tab
+      if (state.activePage && state.activePage !== 'vision') {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
+        const target = document.getElementById('page-' + state.activePage);
+        const btn = document.querySelector('.nav-tabs button[data-page="' + state.activePage + '"]');
+        if (target) target.classList.add('active');
+        if (btn) btn.classList.add('active');
+      }
+    } else {
+      // First sign-in: upload existing local data to the cloud
+      await db.collection('users').doc(currentUser.uid).set({ data: state });
+    }
+  } catch (ex) {
+    console.warn('Firestore load failed:', ex);
+  }
 }
 
 async function tryUnlock(e) {
   if (e) e.preventDefault();
-  const form = document.getElementById('lockForm');
+  const form  = document.getElementById('lockForm');
   const errEl = document.getElementById('lockError');
-  const user = document.getElementById('lockUser').value;
-  const pass = document.getElementById('lockPass').value;
-  try {
-    const h = await deriveHash(user, pass);
-    if (h === AUTH.hash) {
-      localStorage.setItem('wh_auth_v1', '1');
-      document.documentElement.classList.add('wh-authed');
-      errEl.textContent = '';
-    } else {
-      errEl.textContent = 'Incorrect username or password.';
+  const email = document.getElementById('lockUser').value.trim();
+  const pass  = document.getElementById('lockPass').value;
+  errEl.textContent = '';
+  errEl.style.color = 'var(--danger)';
+
+  if (isSignUpMode) {
+    const passConfirm = document.getElementById('lockPassConfirm').value;
+    if (pass !== passConfirm) {
+      errEl.textContent = 'Passwords do not match.';
+      form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake');
+      return false;
+    }
+    if (pass.length < 6) {
+      errEl.textContent = 'Password must be at least 6 characters.';
+      form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake');
+      return false;
+    }
+    try {
+      await auth.createUserWithEmailAndPassword(email, pass);
+      // onAuthStateChanged handles the rest
+    } catch (ex) {
+      errEl.textContent = firebaseErrorMsg(ex.code);
+      form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake');
+    }
+  } else {
+    try {
+      await auth.signInWithEmailAndPassword(email, pass);
+      // onAuthStateChanged handles the rest
+    } catch (ex) {
+      errEl.textContent = firebaseErrorMsg(ex.code);
       form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake');
       document.getElementById('lockPass').value = '';
     }
-  } catch (ex) {
-    errEl.textContent = 'Unlocking needs a secure (https) connection.';
   }
   return false;
 }
 
 function lockSite() {
-  localStorage.removeItem('wh_auth_v1');
-  document.documentElement.classList.remove('wh-authed');
-  location.reload();
+  auth.signOut(); // onAuthStateChanged will show the lock screen
 }
 
 let mapDrag = null;
@@ -3624,20 +3763,44 @@ function seedChecklist() {
   }
 }
 
-load();
-seedChecklist();
-renderChecklist();
-
-// Reopen whatever tab you were last on
-if (state.activePage && state.activePage !== 'vision') {
-  showPage(state.activePage);
+// Load from localStorage immediately so the app renders instantly for returning users
+{
+  const _raw = localStorage.getItem(STORAGE_KEY);
+  if (_raw) { try { state = JSON.parse(_raw); } catch(e) {} }
+  if (!state.tables) state.tables = [];
+  state.guests.forEach(g => { if (g.chair === undefined) g.chair = ''; });
 }
 
-// Focus the login field if the gate is showing
-if (!document.documentElement.classList.contains('wh-authed')) {
-  var _lockUser = document.getElementById('lockUser');
-  if (_lockUser) _lockUser.focus();
-}
+// Firebase auth state drives all rendering and cloud sync
+auth.onAuthStateChanged(user => {
+  if (user) {
+    currentUser = user;
+    localStorage.setItem('wh_fb_auth', '1');
+    document.documentElement.classList.add('wh-authed');
+    document.getElementById('lockError').textContent = '';
+    // Render with local data first (instant), then sync from cloud
+    renderAll();
+    seedChecklist();
+    renderChecklist();
+    if (state.activePage && state.activePage !== 'vision') {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
+      const _target = document.getElementById('page-' + state.activePage);
+      const _btn = document.querySelector('.nav-tabs button[data-page="' + state.activePage + '"]');
+      if (_target) _target.classList.add('active');
+      if (_btn) _btn.classList.add('active');
+    }
+    loadFromFirestore(); // Sync latest cloud data in background
+  } else {
+    currentUser = null;
+    localStorage.removeItem('wh_fb_auth');
+    document.documentElement.classList.remove('wh-authed');
+    setTimeout(() => {
+      const el = document.getElementById('lockUser');
+      if (el) el.focus();
+    }, 100);
+  }
+});
 
 </script>
 </body>
