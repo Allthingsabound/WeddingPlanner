@@ -2439,14 +2439,35 @@ async function signInWithGoogle() {
   errEl.style.color = 'var(--danger)';
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
-    await auth.signInWithPopup(provider);
-    // onAuthStateChanged handles the rest
+    const result = await auth.signInWithPopup(provider);
+    // Show app immediately — don't wait for onAuthStateChanged
+    if (result && result.user) {
+      currentUser = result.user;
+      localStorage.setItem('wh_fb_auth', '1');
+      document.documentElement.classList.add('wh-authed');
+      renderAll(); seedChecklist(); renderChecklist();
+      await ensureWeddingId(result.user);
+    }
   } catch (ex) {
     if (ex.code !== 'auth/popup-closed-by-user' && ex.code !== 'auth/cancelled-popup-request') {
-      console.error('Google sign-in error:', ex.code, ex.message);
       errEl.textContent = firebaseErrorMsg(ex.code);
     }
   }
+}
+
+async function ensureWeddingId(user) {
+  try {
+    const userDoc = await db.collection('users').doc(user.uid).get();
+    if (userDoc.exists && userDoc.data() && userDoc.data().weddingId) {
+      currentWeddingId = userDoc.data().weddingId;
+      loadWeddingData();
+    } else {
+      const code = generateWeddingCode();
+      await db.collection('users').doc(user.uid).set({ weddingId: code });
+      await db.collection('weddings').doc(code).set({ data: state });
+      currentWeddingId = code;
+    }
+  } catch (_) { /* network error — app still works with local data */ }
 }
 
 async function forgotPassword() {
@@ -2598,22 +2619,34 @@ async function syncWithCode() {
   const errEl = document.getElementById('syncError');
   errEl.textContent = '';
   if (!code) { errEl.textContent = 'Enter an invite code first.'; return; }
+
+  const user = auth.currentUser || currentUser;
+  if (!user) {
+    errEl.textContent = 'You need to be signed in first — please sign in and try again.';
+    return;
+  }
+
   try {
     const snap = await db.collection('weddings').doc(code).get();
     if (!snap.exists) { errEl.textContent = 'Code not found — double-check and try again.'; return; }
-    await db.collection('users').doc(currentUser.uid).set({ weddingId: code });
+    await db.collection('users').doc(user.uid).set({ weddingId: code });
     currentWeddingId = code;
     const remote = snap.data().data;
-    Object.assign(state, remote);
-    if (!state.tables) state.tables = [];
-    state.guests.forEach(g => { if (g.chair === undefined) g.chair = ''; });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if (remote) {
+      Object.assign(state, remote);
+      if (!state.tables) state.tables = [];
+      state.guests.forEach(g => { if (g.chair === undefined) g.chair = ''; });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
     closeSyncModal();
     renderAll(); seedChecklist(); renderChecklist();
-    showWeddingCode();
     toast('Synced! You\'re now sharing this planner ♡');
   } catch (ex) {
-    errEl.textContent = 'Something went wrong. Please try again.';
+    if (ex.code === 'permission-denied') {
+      errEl.textContent = 'Permission denied — your Firestore rules may have expired. See instructions below.';
+    } else {
+      errEl.textContent = 'Error: ' + (ex.message || 'Something went wrong. Check your connection.');
+    }
   }
 }
 
@@ -4065,15 +4098,20 @@ auth.onAuthStateChanged(async user => {
       renderAll(); seedChecklist(); renderChecklist();
     }
   } else {
-    currentUser = null;
-    currentWeddingId = null;
-    localStorage.removeItem('wh_fb_auth');
-    document.documentElement.classList.remove('wh-authed');
-    hideSetupScreen();
+    // Delay before locking out — Firebase fires a transient null during Google popup sign-in.
+    // If auth.currentUser is still null after 2s, it's a real sign-out.
     setTimeout(() => {
-      const el = document.getElementById('lockUser');
-      if (el) el.focus();
-    }, 100);
+      if (auth.currentUser) return; // User came back — ignore this null
+      currentUser = null;
+      currentWeddingId = null;
+      localStorage.removeItem('wh_fb_auth');
+      document.documentElement.classList.remove('wh-authed');
+      hideSetupScreen();
+      setTimeout(() => {
+        const el = document.getElementById('lockUser');
+        if (el) el.focus();
+      }, 100);
+    }, 2000);
   }
 });
 
