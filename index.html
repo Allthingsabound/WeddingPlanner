@@ -3377,6 +3377,9 @@ function switchNote(id) {
 }
 
 function deleteNote(id) {
+  const note = state.notes.find(n => n.id === id);
+  const label = note && note.text ? '"' + noteLabel(note.text) + '"' : 'this page';
+  if (!confirm('Delete ' + label + '? This can\'t be undone.')) return;
   state.notes = state.notes.filter(n => n.id !== id);
   if (activeNoteId === id) {
     activeNoteId = state.notes.length > 0 ? state.notes[state.notes.length - 1].id : null;
