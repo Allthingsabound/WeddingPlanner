@@ -1498,6 +1498,16 @@
   .lock-links button:hover { color:var(--mocha); }
   .lock-divider { display:flex; align-items:center; gap:0.75rem; color:var(--muted); font-size:0.75rem; }
   .lock-divider::before, .lock-divider::after { content:''; flex:1; height:1px; background:var(--blush); }
+  .palette-row { display:flex; flex-wrap:wrap; gap:0.65rem; justify-content:center; padding:0.2rem 0; }
+  .palette-swatch {
+    width:46px; height:46px; border-radius:50%; cursor:pointer;
+    border:2px solid transparent; padding:3px; background:none;
+    transition: transform 0.15s, border-color 0.2s;
+  }
+  .palette-swatch:hover { transform: scale(1.1); }
+  .palette-swatch.active { border-color: var(--mocha); }
+  .palette-swatch span { display:block; width:100%; height:100%; border-radius:50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06); }
+  .palette-name { font-size:0.72rem; color:var(--muted); text-align:center; min-height:1em; }
   .btn-google {
     width:100%; display:flex; align-items:center; justify-content:center; gap:0.6rem;
     padding:0.75rem; border-radius:10px; border:1.5px solid var(--blush);
@@ -2260,6 +2270,10 @@
     <input class="lock-input" id="siteTitleInput" type="text" placeholder="Our Wedding" maxlength="30" style="margin:0" />
     <button class="btn-primary lock-btn" onclick="saveSiteTitle()">Save Title</button>
 
+    <div class="lock-divider">color palette</div>
+    <div class="palette-row" id="paletteRow"></div>
+    <div class="palette-name" id="paletteName"></div>
+
     <div class="lock-divider">account</div>
     <button class="btn-ghost" style="width:100%" onclick="closePersonalization();getInviteCode()">Account Link — share your code</button>
     <button class="btn-ghost" style="width:100%" onclick="closePersonalization();openSyncModal()">Account Sync — join your partner</button>
@@ -2341,6 +2355,7 @@ let state = {
   notes: [],
   weddingDate: '',
   siteTitle: '',
+  palette: 'mocha',
   honeymoon: { destination: '', depart: '', returnDate: '', hotel: '', confirm: '', hotelNotes: '', budget: '', spent: '', activities: [], packing: [] },
   apartment: { income: '', expenses: '', utilities: '', apartments: [], viewings: [], musts: [], nices: [], questions: [], tasks: [] },
   registry: []
@@ -2795,6 +2810,7 @@ function load() {
 }
 
 function renderAll() {
+  applyPalette();
   renderBrand();
   renderVision();
   renderSavings();
@@ -2808,6 +2824,57 @@ function renderAll() {
   renderRegistry();
   buildBudget();
   if (state.weddingDate) startCountdown();
+}
+
+// ── COLOR PALETTES ──
+const PALETTES = {
+  mocha: { name: 'Mocha (original)', colors: {
+    '--warm-white':'#FDFAF6','--petal':'#F7EEE7','--blush':'#E8D5C4','--sand':'#C9A98A',
+    '--mocha':'#6B5744','--deep':'#3D2B1F','--text':'#2E1F14','--muted':'#9C8070' } },
+  rose: { name: 'Blush Rose', colors: {
+    '--warm-white':'#FDF8F8','--petal':'#F9EAEE','--blush':'#F0CFD8','--sand':'#D89AA8',
+    '--mocha':'#8A4F5E','--deep':'#56303B','--text':'#3A2028','--muted':'#A87E89' } },
+  sage: { name: 'Sage Garden', colors: {
+    '--warm-white':'#FAFBF7','--petal':'#EEF2E9','--blush':'#D6E0CC','--sand':'#9CB08A',
+    '--mocha':'#55684A','--deep':'#33422C','--text':'#22301E','--muted':'#839178' } },
+  dustyblue: { name: 'Dusty Blue', colors: {
+    '--warm-white':'#F9FAFC','--petal':'#ECF0F5','--blush':'#D3DEEA','--sand':'#92ABC6',
+    '--mocha':'#4E657F','--deep':'#2E4258','--text':'#1F2E3D','--muted':'#7C8FA3' } },
+  lavender: { name: 'Lavender', colors: {
+    '--warm-white':'#FBFAFD','--petal':'#F1EEF7','--blush':'#DED5EC','--sand':'#AC97C9',
+    '--mocha':'#64517E','--deep':'#3E3153','--text':'#2A2138','--muted':'#8D80A0' } },
+  terracotta: { name: 'Terracotta', colors: {
+    '--warm-white':'#FDFAF7','--petal':'#F8EDE5','--blush':'#EFD3BF','--sand':'#D49B72',
+    '--mocha':'#8D5B37','--deep':'#58381F','--text':'#3A2412','--muted':'#A67F62' } }
+};
+
+function applyPalette() {
+  const p = PALETTES[state.palette] || PALETTES.mocha;
+  for (const k in p.colors) document.documentElement.style.setProperty(k, p.colors[k]);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', p.colors['--warm-white']);
+}
+
+function setPalette(key) {
+  if (!PALETTES[key]) return;
+  state.palette = key;
+  save();
+  applyPalette();
+  renderPaletteSwatches();
+  toast(PALETTES[key].name + ' applied ♡');
+}
+
+function renderPaletteSwatches() {
+  const wrap = document.getElementById('paletteRow');
+  const nameEl = document.getElementById('paletteName');
+  if (!wrap) return;
+  const active = PALETTES[state.palette] ? state.palette : 'mocha';
+  wrap.innerHTML = Object.keys(PALETTES).map(key => {
+    const c = PALETTES[key].colors;
+    return '<button class="palette-swatch' + (key === active ? ' active' : '') + '" onclick="setPalette(\'' + key + '\')" title="' + PALETTES[key].name + '">' +
+      '<span style="background:linear-gradient(135deg,' + c['--blush'] + ' 0 34%,' + c['--sand'] + ' 34% 67%,' + c['--mocha'] + ' 67% 100%)"></span></button>';
+  }).join('');
+  if (nameEl) nameEl.textContent = PALETTES[active].name;
 }
 
 // ── SITE TITLE & PERSONALIZATION ──
@@ -2833,6 +2900,7 @@ function editSiteTitle() {
 
 function openPersonalization() {
   document.getElementById('siteTitleInput').value = state.siteTitle || 'Our Wedding';
+  renderPaletteSwatches();
   document.getElementById('personalizationModal').style.display = 'flex';
 }
 
