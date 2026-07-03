@@ -2532,22 +2532,27 @@ function showWeddingCode() {
 }
 
 function showInviteModal(code) {
-  document.getElementById('inviteCodeDisplay').value = code;
-  document.getElementById('inviteModal').style.display = 'flex';
+  const el = document.getElementById('inviteModal');
+  const input = document.getElementById('inviteCodeDisplay');
+  if (!el || !input) { alert('Your invite code: ' + code + '\n\nShare this with your partner!'); return; }
+  input.value = code;
+  el.style.cssText = 'display:flex !important; z-index:9999 !important;';
 }
 
 function closeInviteModal() {
-  document.getElementById('inviteModal').style.display = 'none';
+  const el = document.getElementById('inviteModal');
+  if (el) el.style.cssText = 'display:none';
 }
 
 async function copyInviteCode() {
-  const code = document.getElementById('inviteCodeDisplay').value;
+  const input = document.getElementById('inviteCodeDisplay');
+  const code = input ? input.value : currentWeddingId;
   try {
     await navigator.clipboard.writeText(code);
-    toast('Code copied to clipboard!');
+    toast('Code copied!');
   } catch (ex) {
-    document.getElementById('inviteCodeDisplay').select();
-    toast('Select the code above and copy it');
+    if (input) { input.select(); input.setSelectionRange(0, 99999); }
+    toast('Long-press the code above to copy it');
   }
 }
 
@@ -2557,20 +2562,23 @@ async function copyWeddingCode() {
 }
 
 async function getInviteCode() {
-  if (!currentUser) { toast('Please sign in first.'); return; }
+  const user = auth.currentUser || currentUser;
+  if (!user) { alert('You need to be signed in to get an invite code.'); return; }
+
   if (currentWeddingId) {
     showInviteModal(currentWeddingId);
     return;
   }
-  // No code yet — generate one
+
+  // No code yet — generate one and save it
   try {
     const code = generateWeddingCode();
-    await db.collection('users').doc(currentUser.uid).set({ weddingId: code });
+    await db.collection('users').doc(user.uid).set({ weddingId: code });
     await db.collection('weddings').doc(code).set({ data: state });
     currentWeddingId = code;
     showInviteModal(code);
   } catch (ex) {
-    toast('Could not create code — check your connection.');
+    alert('Could not create a code — please check your connection and try again.');
   }
 }
 
