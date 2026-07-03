@@ -662,26 +662,32 @@
     border-radius: 2px 12px 12px 2px;
     box-shadow:
       -2px 2px 8px rgba(61,43,31,0.12), 4px 10px 32px rgba(61,43,31,0.18),
-      3px 0 0 #EFE7D6, 6px 0 0 #E6DAC3, 9px 0 0 #DACBAC; /* stacked page edges */
+      3px 0 0 color-mix(in srgb, var(--blush) 45%, white),
+      6px 0 0 color-mix(in srgb, var(--blush) 65%, white),
+      9px 0 0 color-mix(in srgb, var(--blush) 85%, white); /* stacked page edges */
     min-height: 600px;
     overflow: hidden;
     margin-right: 9px; /* room for the page-stack edge */
   }
   .nb-spine {
     width: 44px; flex-shrink: 0;
-    background: linear-gradient(to right, #211208 0%, #4A3020 55%, #3D2B1F 100%);
+    background: linear-gradient(to right,
+      color-mix(in srgb, var(--deep) 80%, black) 0%,
+      color-mix(in srgb, var(--deep) 55%, var(--mocha)) 55%,
+      var(--deep) 100%);
     display: flex; flex-direction: column;
     align-items: center; padding: 18px 0; gap: 13px;
   }
   .nb-ring {
     width: 20px; height: 20px;
-    border: 2.5px solid #C9A98A; border-radius: 50%;
-    background: #150c05; flex-shrink: 0;
+    border: 2.5px solid var(--sand); border-radius: 50%;
+    background: color-mix(in srgb, var(--deep) 60%, black); flex-shrink: 0;
   }
   .nb-pages { flex: 1; display: flex; flex-direction: column; min-width: 0; }
   .nb-tabs {
     display: flex; align-items: flex-end;
-    background: #e4d3b8; border-bottom: 2px solid #c8b69a;
+    background: color-mix(in srgb, var(--blush) 75%, var(--sand));
+    border-bottom: 2px solid color-mix(in srgb, var(--sand) 55%, var(--blush));
     overflow-x: auto; gap: 2px; padding: 8px 8px 0; flex-shrink: 0;
   }
   .nb-tabs::-webkit-scrollbar { height: 4px; }
@@ -690,12 +696,13 @@
     display: flex; align-items: center; gap: 5px;
     padding: 5px 11px; font-size: 0.73rem;
     font-family: 'Inter', sans-serif;
-    background: #cebfa4; border: 1px solid #bfad91; border-bottom: none;
-    border-radius: 5px 5px 0 0; cursor: pointer; color: var(--muted);
+    background: color-mix(in srgb, var(--blush) 45%, var(--sand));
+    border: 1px solid color-mix(in srgb, var(--sand) 70%, var(--blush)); border-bottom: none;
+    border-radius: 5px 5px 0 0; cursor: pointer; color: var(--deep);
     transition: background 0.15s; white-space: nowrap; user-select: none;
   }
-  .nb-tab:hover { background: #d8cab0; }
-  .nb-tab.active { background: #FFFEF9; color: var(--mocha); font-weight: 500; }
+  .nb-tab:hover { background: color-mix(in srgb, var(--blush) 65%, var(--sand)); }
+  .nb-tab.active { background: var(--warm-white); color: var(--mocha); font-weight: 500; }
   .nb-tab-label { max-width: 130px; overflow: hidden; text-overflow: ellipsis; }
   .nb-tab-del {
     font-size: 0.58rem; color: var(--blush); opacity: 0;
@@ -708,12 +715,12 @@
     font-size: 1.2rem; color: var(--muted); padding: 3px 10px 5px;
     border-radius: 5px 5px 0 0; transition: all 0.15s; line-height: 1;
   }
-  .nb-add-tab:hover { background: #d8cab0; color: var(--mocha); }
+  .nb-add-tab:hover { background: color-mix(in srgb, var(--blush) 65%, var(--sand)); color: var(--mocha); }
   .nb-page {
     flex: 1;
     display: flex; flex-direction: column;
     position: relative;
-    background-color: #FFFEF9;
+    background-color: var(--warm-white);
     background-image:
       linear-gradient(90deg, transparent 79px, rgba(185,55,55,0.22) 79px, rgba(185,55,55,0.22) 80px, transparent 80px),
       repeating-linear-gradient(transparent, transparent 31px, rgba(170,158,140,0.45) 31px, rgba(170,158,140,0.45) 32px);
@@ -754,7 +761,9 @@
   }
   .nb-toolbar {
     display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
-    padding: 6px 12px; background: #f3ecdd; border-bottom: 1px solid #e0d4bb;
+    padding: 6px 12px;
+    background: color-mix(in srgb, var(--petal) 65%, var(--blush));
+    border-bottom: 1px solid color-mix(in srgb, var(--blush) 75%, var(--sand));
     flex-wrap: wrap; font-size: 0.74rem; color: var(--muted);
     font-family: 'Inter', sans-serif; flex-shrink: 0;
   }
@@ -763,12 +772,12 @@
     background: none; border: none; cursor: pointer; color: var(--mocha);
     font-size: 1.05rem; line-height: 1; padding: 2px 8px; border-radius: 4px;
   }
-  .nb-pager button:hover { background: #e6dac2; }
+  .nb-pager button:hover { background: var(--blush); }
   .nb-pager button:disabled { opacity: 0.25; cursor: default; background: none; }
   .nb-search {
     flex: 1; min-width: 100px; max-width: 200px;
-    padding: 4px 12px; border: 1px solid #ddd0b6; border-radius: 100px;
-    background: #fffef9; font-size: 0.73rem; outline: none;
+    padding: 4px 12px; border: 1px solid var(--blush); border-radius: 100px;
+    background: var(--warm-white); font-size: 0.73rem; outline: none;
     font-family: 'Inter', sans-serif; color: var(--text);
   }
   .nb-search:focus { border-color: var(--sand); }
@@ -782,7 +791,7 @@
   .nb-paper-dot:hover { transform: scale(1.15); }
   .nb-paper-dot.active { border-color: var(--mocha); }
   .nb-pen-btn {
-    background: #fffef9; border: 1px solid #ddd0b6; border-radius: 6px;
+    background: var(--warm-white); border: 1px solid var(--blush); border-radius: 6px;
     padding: 3px 10px; cursor: pointer; font-size: 0.73rem; color: var(--mocha);
     font-family: 'Inter', sans-serif; transition: all 0.15s; white-space: nowrap;
   }
@@ -3811,10 +3820,11 @@ function renderNotes() {
     if (prev) prev.disabled = i <= 0;
     if (next) next.disabled = i >= state.notes.length - 1;
     const dots = document.getElementById('nbPaperDots');
-    if (dots) dots.innerHTML = Object.keys(NB_PAPERS).map(p =>
-      '<button class="nb-paper-dot' + (p === paper ? ' active' : '') + '" style="background:' + NB_PAPERS[p] +
-      '" onclick="setNotePaper(\'' + p + '\')" title="' + p.charAt(0).toUpperCase() + p.slice(1) + ' paper"></button>'
-    ).join('');
+    if (dots) dots.innerHTML = Object.keys(NB_PAPERS).map(p => {
+      const bg = p === 'cream' ? currentPaletteColors()['--warm-white'] : NB_PAPERS[p];
+      return '<button class="nb-paper-dot' + (p === paper ? ' active' : '') + '" style="background:' + bg +
+        '" onclick="setNotePaper(\'' + p + '\')" title="' + p.charAt(0).toUpperCase() + p.slice(1) + ' paper"></button>';
+    }).join('');
     const pen = document.getElementById('nbPenBtn');
     if (pen) {
       const hand = !!(n && n.font === 'hand');
