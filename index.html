@@ -2013,6 +2013,8 @@
           </div>
           <input class="nb-search" id="nbSearch" type="text" placeholder="Search pages…" oninput="noteSearch(this.value)" />
           <div class="nb-tools">
+            <button class="nb-pen-btn" onclick="nbInsertList('num')" title="Start a numbered list">1. List</button>
+            <button class="nb-pen-btn" onclick="nbInsertList('check')" title="Start a checklist">☐ Checklist</button>
             <div class="nb-paper-dots" id="nbPaperDots"></div>
             <button class="nb-pen-btn" id="nbPenBtn" onclick="toggleNoteFont()">✒ Handwriting</button>
           </div>
@@ -2023,7 +2025,8 @@
             <p style="color:var(--blush);font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-style:italic;">No pages yet — hit <strong>+</strong> to start writing</p>
           </div>
           <textarea class="nb-textarea" id="nbTextarea" placeholder="Write anything…" style="display:none"
-            oninput="onNoteInput(this.value)" onchange="onNoteChange(this.value)"></textarea>
+            oninput="onNoteInput(this.value)" onchange="onNoteChange(this.value)"
+            onkeydown="nbKeydown(event)" onclick="nbClick(event)"></textarea>
           <div class="nb-meta" id="nbMeta" style="display:none">
             <span id="nbMetaDate"></span>
             <span id="nbMetaCount"></span>
@@ -3731,6 +3734,73 @@ function toggleNoteFont() {
   n.font = n.font === 'hand' ? 'serif' : 'hand';
   save();
   renderNotes();
+}
+
+// ── Notebook lists & checkboxes ──
+// Insert a "1. " or "☐ " marker at the caret (continuing numbering if the
+// lines above are already a numbered list).
+function nbInsertList(type) {
+  const ta = document.getElementById('nbTextarea');
+  if (!ta || ta.style.display === 'none') return;
+  ta.focus();
+  const pos = ta.selectionStart;
+  const val = ta.value;
+  const lineStart = val.lastIndexOf('\n', pos - 1) + 1;
+  const line = val.slice(lineStart, pos);
+  let marker = '☐ ';
+  if (type === 'num') {
+    marker = '1. ';
+    const prevLines = val.slice(0, lineStart).split('\n');
+    for (let i = prevLines.length - 1; i >= 0; i--) {
+      const m = prevLines[i].match(/^(\d+)\.\s/);
+      if (m) { marker = (parseInt(m[1], 10) + 1) + '. '; break; }
+      if (prevLines[i].trim() !== '') break;
+    }
+  }
+  const text = (line.trim() === '' ? '' : '\n') + marker;
+  ta.setRangeText(text, pos, ta.selectionEnd, 'end');
+  onNoteInput(ta.value);
+}
+
+// Enter continues a numbered list or checklist; Enter on an empty item ends it.
+function nbKeydown(e) {
+  if (e.key !== 'Enter') return;
+  const ta = e.target;
+  const pos = ta.selectionStart;
+  const val = ta.value;
+  const lineStart = val.lastIndexOf('\n', pos - 1) + 1;
+  const line = val.slice(lineStart, pos);
+  let m;
+  if ((m = line.match(/^(\d+)\.\s?/))) {
+    e.preventDefault();
+    if (line.trim() === m[1] + '.') {
+      ta.setRangeText('', lineStart, pos, 'end'); // empty item → end the list
+    } else {
+      ta.setRangeText('\n' + (parseInt(m[1], 10) + 1) + '. ', pos, ta.selectionEnd, 'end');
+    }
+    onNoteInput(ta.value);
+  } else if ((m = line.match(/^([☐☑])\s?/))) {
+    e.preventDefault();
+    if (line.trim() === m[1]) {
+      ta.setRangeText('', lineStart, pos, 'end'); // empty item → end the list
+    } else {
+      ta.setRangeText('\n☐ ', pos, ta.selectionEnd, 'end');
+    }
+    onNoteInput(ta.value);
+  }
+}
+
+// Tapping a ☐ / ☑ at the start of a line toggles it.
+function nbClick(e) {
+  const ta = e.target;
+  const pos = ta.selectionStart;
+  const val = ta.value;
+  const lineStart = val.lastIndexOf('\n', pos - 1) + 1;
+  const ch = val.charAt(lineStart);
+  if ((ch === '☐' || ch === '☑') && pos <= lineStart + 1) {
+    ta.setRangeText(ch === '☐' ? '☑' : '☐', lineStart, lineStart + 1, 'preserve');
+    onNoteInput(ta.value);
+  }
 }
 
 function updateNbMeta(n) {
