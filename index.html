@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#FDFAF6" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&family=Caveat:wght@400;500&display=swap" rel="stylesheet" />
 <style>
   :root {
     --warm-white: #FDFAF6;
@@ -660,9 +660,12 @@
   .notebook {
     display: flex;
     border-radius: 2px 12px 12px 2px;
-    box-shadow: -2px 2px 8px rgba(61,43,31,0.12), 4px 10px 32px rgba(61,43,31,0.18);
+    box-shadow:
+      -2px 2px 8px rgba(61,43,31,0.12), 4px 10px 32px rgba(61,43,31,0.18),
+      3px 0 0 #EFE7D6, 6px 0 0 #E6DAC3, 9px 0 0 #DACBAC; /* stacked page edges */
     min-height: 600px;
     overflow: hidden;
+    margin-right: 9px; /* room for the page-stack edge */
   }
   .nb-spine {
     width: 44px; flex-shrink: 0;
@@ -708,6 +711,8 @@
   .nb-add-tab:hover { background: #d8cab0; color: var(--mocha); }
   .nb-page {
     flex: 1;
+    display: flex; flex-direction: column;
+    position: relative;
     background-color: #FFFEF9;
     background-image:
       linear-gradient(90deg, transparent 79px, rgba(185,55,55,0.22) 79px, rgba(185,55,55,0.22) 80px, transparent 80px),
@@ -716,19 +721,72 @@
     background-position: 0 0, 0 8px;
     background-repeat: no-repeat, repeat;
   }
+  .nb-page.paper-blush { background-color: #FFF6F3; }
+  .nb-page.paper-mint  { background-color: #F5FBF3; }
+  .nb-page.paper-sky   { background-color: #F4F9FD; }
+  .nb-ribbon {
+    position: absolute; top: 0; right: 36px;
+    width: 24px; height: 68px;
+    background: linear-gradient(180deg, var(--danger) 0%, #A85B4C 100%);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 12px), 0 100%);
+    opacity: 0.85; pointer-events: none; z-index: 2;
+    box-shadow: 0 2px 4px rgba(61,43,31,0.15);
+  }
   .nb-textarea {
-    width: 100%; height: 100%; min-height: 560px;
-    padding: 8px 2.5rem 2.5rem 100px;
+    width: 100%; flex: 1; min-height: 520px;
+    padding: 8px 2.5rem 1rem 100px;
     border: none; outline: none; resize: none;
     background: transparent;
     font-family: 'Cormorant Garamond', serif;
     font-size: 1.08rem; line-height: 32px; color: var(--text);
   }
+  .nb-textarea.hand { font-family: 'Caveat', cursive; font-size: 1.5rem; }
   .nb-textarea::placeholder { color: var(--blush); font-style: italic; }
   .nb-empty {
     display: flex; flex-direction: column; align-items: center;
     justify-content: center; min-height: 560px; padding: 3rem; text-align: center;
   }
+  .nb-meta {
+    display: flex; justify-content: space-between; gap: 1rem;
+    padding: 0 1.2rem 10px 100px;
+    font-family: 'Inter', sans-serif; font-size: 0.68rem; color: var(--muted);
+    letter-spacing: 0.03em;
+  }
+  .nb-toolbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+    padding: 6px 12px; background: #f3ecdd; border-bottom: 1px solid #e0d4bb;
+    flex-wrap: wrap; font-size: 0.74rem; color: var(--muted);
+    font-family: 'Inter', sans-serif; flex-shrink: 0;
+  }
+  .nb-pager { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .nb-pager button {
+    background: none; border: none; cursor: pointer; color: var(--mocha);
+    font-size: 1.05rem; line-height: 1; padding: 2px 8px; border-radius: 4px;
+  }
+  .nb-pager button:hover { background: #e6dac2; }
+  .nb-pager button:disabled { opacity: 0.25; cursor: default; background: none; }
+  .nb-search {
+    flex: 1; min-width: 100px; max-width: 200px;
+    padding: 4px 12px; border: 1px solid #ddd0b6; border-radius: 100px;
+    background: #fffef9; font-size: 0.73rem; outline: none;
+    font-family: 'Inter', sans-serif; color: var(--text);
+  }
+  .nb-search:focus { border-color: var(--sand); }
+  .nb-tools { display: flex; align-items: center; gap: 10px; }
+  .nb-paper-dots { display: flex; gap: 5px; }
+  .nb-paper-dot {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid rgba(0,0,0,0.08); cursor: pointer; padding: 0;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .nb-paper-dot:hover { transform: scale(1.15); }
+  .nb-paper-dot.active { border-color: var(--mocha); }
+  .nb-pen-btn {
+    background: #fffef9; border: 1px solid #ddd0b6; border-radius: 6px;
+    padding: 3px 10px; cursor: pointer; font-size: 0.73rem; color: var(--mocha);
+    font-family: 'Inter', sans-serif; transition: all 0.15s; white-space: nowrap;
+  }
+  .nb-pen-btn.active { background: var(--mocha); color: #fff; border-color: var(--mocha); }
   @media (max-width: 640px) {
     .nb-spine { width: 30px; }
     .nb-ring { width: 14px; height: 14px; border-width: 2px; }
@@ -738,6 +796,8 @@
         repeating-linear-gradient(transparent, transparent 31px, rgba(170,158,140,0.45) 31px, rgba(170,158,140,0.45) 32px);
     }
     .nb-textarea { padding-left: 64px; }
+    .nb-meta { padding-left: 64px; }
+    .nb-ribbon { right: 20px; width: 18px; height: 52px; }
   }
 
 
@@ -1936,12 +1996,29 @@
         <div class="nb-tabs" id="nbTabs">
           <button class="nb-add-tab" onclick="addNote()" title="New page">+</button>
         </div>
+        <div class="nb-toolbar" id="nbToolbar" style="display:none">
+          <div class="nb-pager">
+            <button id="nbPrev" onclick="prevNote()" title="Previous page">‹</button>
+            <span id="nbPageNum">Page 1 of 1</span>
+            <button id="nbNext" onclick="nextNote()" title="Next page">›</button>
+          </div>
+          <input class="nb-search" id="nbSearch" type="text" placeholder="Search pages…" oninput="noteSearch(this.value)" />
+          <div class="nb-tools">
+            <div class="nb-paper-dots" id="nbPaperDots"></div>
+            <button class="nb-pen-btn" id="nbPenBtn" onclick="toggleNoteFont()">✒ Handwriting</button>
+          </div>
+        </div>
         <div class="nb-page" id="nbPage">
+          <div class="nb-ribbon"></div>
           <div class="nb-empty" id="nbEmpty">
             <p style="color:var(--blush);font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-style:italic;">No pages yet — hit <strong>+</strong> to start writing</p>
           </div>
           <textarea class="nb-textarea" id="nbTextarea" placeholder="Write anything…" style="display:none"
             oninput="onNoteInput(this.value)" onchange="onNoteChange(this.value)"></textarea>
+          <div class="nb-meta" id="nbMeta" style="display:none">
+            <span id="nbMetaDate"></span>
+            <span id="nbMetaCount"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -2280,6 +2357,7 @@
     <button class="btn-ghost" style="width:100%" onclick="signOutUser()">Sign Out</button>
 
     <div class="lock-divider">data</div>
+    <button class="btn-primary lock-btn" onclick="forceCloudSave()">☁️ Save to cloud now</button>
     <button class="btn-ghost" style="width:100%" onclick="exportData()">Download a backup</button>
     <label class="btn-ghost" style="width:100%;text-align:center;cursor:pointer" tabindex="0">Restore from backup<input type="file" accept="application/json,.json" onchange="importData(this);closePersonalization()" hidden /></label>
 
@@ -2545,6 +2623,22 @@ function saveToFirestore() {
       console.warn('Firestore save failed:', ex);
     }
   }, 800);
+}
+
+async function forceCloudSave() {
+  const user = auth.currentUser || currentUser;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  if (!user || !currentWeddingId) {
+    toast('Sign in first to save to the cloud.');
+    return;
+  }
+  clearTimeout(_firestoreSaveTimer); // cancel any pending debounced save
+  try {
+    await db.collection('weddings').doc(currentWeddingId).set({ data: state });
+    toast('Saved to the cloud ☁️');
+  } catch (ex) {
+    toast('Cloud save failed — check your connection.');
+  }
 }
 
 async function loadWeddingData() {
@@ -3480,13 +3574,25 @@ function renderChecklist() {
 }
 
 // ── NOTES ──
+const NB_PAPERS = { cream: '#FFFEF9', blush: '#FFF6F3', mint: '#F5FBF3', sky: '#F4F9FD' };
+let nbQuery = '';
+
 function noteLabel(text) {
   const first = (text || '').trim().split('\n')[0].trim();
   return first.length > 0 ? first : 'New page';
 }
 
+function nbWordCount(text) {
+  const m = (text || '').trim().match(/\S+/g);
+  return m ? m.length : 0;
+}
+
+function nbDate(ts) {
+  return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 function addNote() {
-  const n = { id: Date.now(), text: '' };
+  const n = { id: Date.now(), text: '', paper: 'cream', font: 'serif', created: Date.now(), updated: Date.now() };
   state.notes.push(n);
   activeNoteId = n.id;
   save();
@@ -3499,21 +3605,67 @@ function onNoteInput(text) {
   const n = state.notes.find(n => n.id === activeNoteId);
   if (!n) return;
   n.text = text;
+  n.updated = Date.now();
   saveSoon();
   const activeTab = document.querySelector('.nb-tab.active .nb-tab-label');
   if (activeTab) activeTab.textContent = noteLabel(text);
+  updateNbMeta(n);
 }
 
 function onNoteChange(text) {
   const n = state.notes.find(n => n.id === activeNoteId);
   if (!n) return;
   n.text = text;
+  n.updated = Date.now();
   save();
 }
 
 function switchNote(id) {
   activeNoteId = id;
   renderNotes();
+}
+
+function prevNote() {
+  const i = state.notes.findIndex(n => n.id === activeNoteId);
+  if (i > 0) switchNote(state.notes[i - 1].id);
+}
+
+function nextNote() {
+  const i = state.notes.findIndex(n => n.id === activeNoteId);
+  if (i > -1 && i < state.notes.length - 1) switchNote(state.notes[i + 1].id);
+}
+
+function noteSearch(q) {
+  nbQuery = (q || '').toLowerCase();
+  renderNotes();
+}
+
+function setNotePaper(paper) {
+  const n = state.notes.find(n => n.id === activeNoteId);
+  if (!n || !NB_PAPERS[paper]) return;
+  n.paper = paper;
+  save();
+  renderNotes();
+}
+
+function toggleNoteFont() {
+  const n = state.notes.find(n => n.id === activeNoteId);
+  if (!n) return;
+  n.font = n.font === 'hand' ? 'serif' : 'hand';
+  save();
+  renderNotes();
+}
+
+function updateNbMeta(n) {
+  const dateEl = document.getElementById('nbMetaDate');
+  const countEl = document.getElementById('nbMetaCount');
+  if (!dateEl || !countEl || !n) return;
+  let d = '';
+  if (n.created) d = 'Started ' + nbDate(n.created);
+  if (n.updated && n.updated !== n.created) d += (d ? ' · ' : '') + 'Edited ' + nbDate(n.updated);
+  dateEl.textContent = d;
+  const w = nbWordCount(n.text);
+  countEl.textContent = w === 0 ? '' : w + (w === 1 ? ' word' : ' words');
 }
 
 function deleteNote(id) {
@@ -3537,30 +3689,73 @@ function renderNotes() {
   const spine = document.getElementById('nbSpine');
   if (spine) spine.innerHTML = Array.from({length: 9}, () => '<div class="nb-ring"></div>').join('');
 
+  // Tabs — filtered by the search box if a query is set
+  const visible = nbQuery
+    ? state.notes.filter(n => (n.text || '').toLowerCase().includes(nbQuery))
+    : state.notes;
   const tabs = document.getElementById('nbTabs');
   if (tabs) {
-    const tabHtml = state.notes.map(n => `
+    const tabHtml = visible.map(n => `
       <div class="nb-tab${n.id === activeNoteId ? ' active' : ''}" onclick="switchNote(${n.id})">
         <span class="nb-tab-label">${esc(noteLabel(n.text))}</span>
         <span class="nb-tab-del" onclick="event.stopPropagation();deleteNote(${n.id})" title="Delete page">✕</span>
       </div>
     `).join('');
-    tabs.innerHTML = tabHtml + '<button class="nb-add-tab" onclick="addNote()" title="New page">+</button>';
+    const noMatch = nbQuery && visible.length === 0
+      ? '<span style="font-size:0.72rem;color:var(--muted);padding:6px 8px">No pages match</span>' : '';
+    tabs.innerHTML = tabHtml + noMatch + '<button class="nb-add-tab" onclick="addNote()" title="New page">+</button>';
   }
 
+  const toolbar = document.getElementById('nbToolbar');
   const empty = document.getElementById('nbEmpty');
   const ta = document.getElementById('nbTextarea');
+  const meta = document.getElementById('nbMeta');
+  const pageEl = document.getElementById('nbPage');
   if (!ta || !empty) return;
 
   if (activeNoteId === null) {
+    if (toolbar) toolbar.style.display = 'none';
+    if (meta) meta.style.display = 'none';
+    if (pageEl) pageEl.className = 'nb-page';
     empty.style.display = '';
     ta.style.display = 'none';
-  } else {
-    const n = state.notes.find(n => n.id === activeNoteId);
-    empty.style.display = 'none';
-    ta.style.display = '';
-    ta.value = n ? n.text : '';
+    return;
   }
+
+  const n = state.notes.find(n => n.id === activeNoteId);
+  empty.style.display = 'none';
+  ta.style.display = '';
+  ta.value = n ? n.text : '';
+
+  // Paper color + pen style
+  const paper = n && NB_PAPERS[n.paper] ? n.paper : 'cream';
+  if (pageEl) pageEl.className = 'nb-page paper-' + paper;
+  ta.classList.toggle('hand', !!(n && n.font === 'hand'));
+
+  // Toolbar: pager, paper dots, pen button
+  if (toolbar) {
+    toolbar.style.display = '';
+    const i = state.notes.findIndex(x => x.id === activeNoteId);
+    const numEl = document.getElementById('nbPageNum');
+    if (numEl) numEl.textContent = 'Page ' + (i + 1) + ' of ' + state.notes.length;
+    const prev = document.getElementById('nbPrev');
+    const next = document.getElementById('nbNext');
+    if (prev) prev.disabled = i <= 0;
+    if (next) next.disabled = i >= state.notes.length - 1;
+    const dots = document.getElementById('nbPaperDots');
+    if (dots) dots.innerHTML = Object.keys(NB_PAPERS).map(p =>
+      '<button class="nb-paper-dot' + (p === paper ? ' active' : '') + '" style="background:' + NB_PAPERS[p] +
+      '" onclick="setNotePaper(\'' + p + '\')" title="' + p.charAt(0).toUpperCase() + p.slice(1) + ' paper"></button>'
+    ).join('');
+    const pen = document.getElementById('nbPenBtn');
+    if (pen) {
+      const hand = !!(n && n.font === 'hand');
+      pen.classList.toggle('active', hand);
+      pen.textContent = hand ? '✒ Handwriting on' : '✒ Handwriting';
+    }
+  }
+
+  if (meta) { meta.style.display = ''; updateNbMeta(n); }
 }
 
 
