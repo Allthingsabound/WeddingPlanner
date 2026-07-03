@@ -82,6 +82,16 @@
   .nav-tabs button:hover { background: var(--petal); color: var(--mocha); }
   .nav-tabs button.active { background: var(--blush); color: var(--mocha); }
 
+  .nav-brand { cursor: pointer; }
+  .gear-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 1.2rem; color: var(--muted);
+    padding: 0.35rem 0.55rem; border-radius: 50%;
+    flex-shrink: 0; margin-left: 0.5rem;
+    transition: all 0.2s;
+  }
+  .gear-btn:hover { background: var(--petal); color: var(--mocha); transform: rotate(30deg); }
+
   /* ── MAIN ── */
   main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
 
@@ -1562,7 +1572,7 @@
 </div>
 
 <nav>
-  <div class="nav-brand">Our <span>Wedding</span></div>
+  <div class="nav-brand" id="navBrand" onclick="editSiteTitle()" title="Tap to rename">Our <span>Wedding</span></div>
   <ul class="nav-tabs" id="navTabs">
     <li><button class="active" data-page="vision" onclick="showPage('vision', this)">✦ Vision</button></li>
     <li><button data-page="savings" onclick="showPage('savings', this)">Savings</button></li>
@@ -1574,6 +1584,7 @@
     <li><button data-page="apartment" onclick="showPage('apartment', this)">🏠 Apartment</button></li>
     <li><button data-page="registry" onclick="showPage('registry', this)">🎁 Gifts</button></li>
   </ul>
+  <button class="gear-btn" onclick="openPersonalization()" title="Personalization" aria-label="Personalization">⚙</button>
 </nav>
 
 <main>
@@ -2238,17 +2249,29 @@
 
 <footer class="app-footer">
   <span>☁️ Everything is saved securely in the cloud.</span>
-  <span class="dot">·</span>
-  <button class="link-btn" onclick="exportData()">Download a backup</button>
-  <span class="dot">·</span>
-  <label class="link-btn" tabindex="0">Restore from backup<input type="file" accept="application/json,.json" onchange="importData(this)" hidden /></label>
-  <span class="dot">·</span>
-  <button class="link-btn" onclick="lockSite()">Lock</button>
-  <span class="dot">·</span>
-  <button class="link-btn" onclick="getInviteCode()">Account Link</button>
-  <span class="dot">·</span>
-  <button class="link-btn" onclick="openSyncModal()">Account Sync</button>
 </footer>
+
+<!-- Personalization panel -->
+<div class="sync-modal" id="personalizationModal" style="display:none" onclick="if(event.target===this)closePersonalization()">
+  <div class="sync-modal-card">
+    <div class="sync-modal-title">Personali<em>zation</em></div>
+
+    <label style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)">Site title</label>
+    <input class="lock-input" id="siteTitleInput" type="text" placeholder="Our Wedding" maxlength="30" style="margin:0" />
+    <button class="btn-primary lock-btn" onclick="saveSiteTitle()">Save Title</button>
+
+    <div class="lock-divider">account</div>
+    <button class="btn-ghost" style="width:100%" onclick="closePersonalization();getInviteCode()">Account Link — share your code</button>
+    <button class="btn-ghost" style="width:100%" onclick="closePersonalization();openSyncModal()">Account Sync — join your partner</button>
+    <button class="btn-ghost" style="width:100%" onclick="signOutUser()">Sign Out</button>
+
+    <div class="lock-divider">data</div>
+    <button class="btn-ghost" style="width:100%" onclick="exportData()">Download a backup</button>
+    <label class="btn-ghost" style="width:100%;text-align:center;cursor:pointer" tabindex="0">Restore from backup<input type="file" accept="application/json,.json" onchange="importData(this);closePersonalization()" hidden /></label>
+
+    <button class="link-btn" style="margin-top:0.5rem" onclick="closePersonalization()">Close</button>
+  </div>
+</div>
 
 <!-- Invite code display modal -->
 <div class="sync-modal" id="inviteModal" style="display:none" onclick="if(event.target===this)closeInviteModal()">
@@ -2317,6 +2340,7 @@ let state = {
   tasks: [],
   notes: [],
   weddingDate: '',
+  siteTitle: '',
   honeymoon: { destination: '', depart: '', returnDate: '', hotel: '', confirm: '', hotelNotes: '', budget: '', spent: '', activities: [], packing: [] },
   apartment: { income: '', expenses: '', utilities: '', apartments: [], viewings: [], musts: [], nices: [], questions: [], tasks: [] },
   registry: []
@@ -2743,7 +2767,10 @@ async function tryUnlock(e) {
 
 function lockSite() {
   currentWeddingId = null;
-  auth.signOut(); // onAuthStateChanged will show the lock screen
+  currentUser = null;
+  localStorage.removeItem('wh_fb_auth');
+  document.documentElement.classList.remove('wh-authed'); // show login screen instantly
+  auth.signOut();
 }
 
 let mapDrag = null;
@@ -2768,6 +2795,7 @@ function load() {
 }
 
 function renderAll() {
+  renderBrand();
   renderVision();
   renderSavings();
   renderVendors();
@@ -2780,6 +2808,50 @@ function renderAll() {
   renderRegistry();
   buildBudget();
   if (state.weddingDate) startCountdown();
+}
+
+// ── SITE TITLE & PERSONALIZATION ──
+function renderBrand() {
+  const t = (state.siteTitle || 'Our Wedding').trim();
+  const el = document.getElementById('navBrand');
+  if (!el) return;
+  const words = t.split(/\s+/);
+  const last = words.pop();
+  el.innerHTML = (words.length ? esc(words.join(' ')) + ' ' : '') + '<span>' + esc(last) + '</span>';
+  document.title = t;
+}
+
+function editSiteTitle() {
+  const current = state.siteTitle || 'Our Wedding';
+  const name = prompt('Name your planner:', current);
+  if (name === null) return;
+  state.siteTitle = name.trim().slice(0, 30);
+  save();
+  renderBrand();
+  toast('Title updated ♡');
+}
+
+function openPersonalization() {
+  document.getElementById('siteTitleInput').value = state.siteTitle || 'Our Wedding';
+  document.getElementById('personalizationModal').style.display = 'flex';
+}
+
+function closePersonalization() {
+  document.getElementById('personalizationModal').style.display = 'none';
+}
+
+function saveSiteTitle() {
+  const val = document.getElementById('siteTitleInput').value.trim().slice(0, 30);
+  state.siteTitle = val;
+  save();
+  renderBrand();
+  toast('Title updated ♡');
+  closePersonalization();
+}
+
+function signOutUser() {
+  closePersonalization();
+  lockSite();
 }
 
 // ── NAV ──
