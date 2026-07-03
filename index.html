@@ -4041,9 +4041,15 @@ auth.onAuthStateChanged(async user => {
         }
         loadWeddingData(); // Sync latest cloud data in background
       } else {
-        // New user — keep lock screen up, switch to setup card
-        document.documentElement.classList.remove('wh-authed');
-        showWeddingSetup();
+        // New user — auto-create a wedding and land them straight on the app
+        try {
+          const code = generateWeddingCode();
+          await db.collection('users').doc(user.uid).set({ weddingId: code });
+          await db.collection('weddings').doc(code).set({ data: state });
+          currentWeddingId = code;
+        } catch (_) { /* network error — still show app with local data */ }
+        document.documentElement.classList.add('wh-authed');
+        renderAll(); seedChecklist(); renderChecklist();
       }
     } catch (ex) {
       // Fallback on network error — show app with local data
