@@ -3737,28 +3737,60 @@ function toggleNoteFont() {
 }
 
 // ── Notebook lists & checkboxes ──
-// Insert a "1. " or "☐ " marker at the caret (continuing numbering if the
-// lines above are already a numbered list).
+// Edit the textarea through execCommand so the browser's native undo
+// history (Ctrl+Z / Cmd+Z) keeps working; setRangeText would bypass it.
+function nbEdit(ta, text, selStart, selEnd) {
+  ta.setSelectionRange(selStart, selEnd);
+  let ok = false;
+  try {
+    ok = text === ''
+      ? document.execCommand('delete', false)
+      : document.execCommand('insertText', false, text);
+  } catch (e) { ok = false; }
+  if (!ok) ta.setRangeText(text, selStart, selEnd, 'end');
+}
+
+// Find what number a new list should start at, continuing any list that
+// ends right above lineStart.
+function nbNextNumber(val, lineStart) {
+  const prevLines = val.slice(0, lineStart).split('\n');
+  for (let i = prevLines.length - 1; i >= 0; i--) {
+    const m = prevLines[i].match(/^(\d+)\.\s/);
+    if (m) return parseInt(m[1], 10) + 1;
+    if (prevLines[i].trim() !== '') break;
+  }
+  return 1;
+}
+
+// List/checklist button. With text selected, converts each selected line
+// into a list item; with no selection, inserts a fresh marker at the caret.
 function nbInsertList(type) {
   const ta = document.getElementById('nbTextarea');
   if (!ta || ta.style.display === 'none') return;
   ta.focus();
-  const pos = ta.selectionStart;
+  const start = ta.selectionStart, end = ta.selectionEnd;
   const val = ta.value;
-  const lineStart = val.lastIndexOf('\n', pos - 1) + 1;
-  const line = val.slice(lineStart, pos);
-  let marker = '☐ ';
-  if (type === 'num') {
-    marker = '1. ';
-    const prevLines = val.slice(0, lineStart).split('\n');
-    for (let i = prevLines.length - 1; i >= 0; i--) {
-      const m = prevLines[i].match(/^(\d+)\.\s/);
-      if (m) { marker = (parseInt(m[1], 10) + 1) + '. '; break; }
-      if (prevLines[i].trim() !== '') break;
-    }
+
+  if (start !== end) {
+    // Expand the selection to whole lines, then prefix each one
+    const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+    let lineEnd = val.indexOf('\n', end);
+    if (lineEnd === -1) lineEnd = val.length;
+    let num = type === 'num' ? nbNextNumber(val, lineStart) : 0;
+    const converted = val.slice(lineStart, lineEnd).split('\n').map(l => {
+      const stripped = l.replace(/^(\d+\.\s+|[☐☑]\s+)/, ''); // don't double-mark
+      if (stripped.trim() === '') return l;
+      return type === 'num' ? (num++) + '. ' + stripped : '☐ ' + stripped;
+    }).join('\n');
+    nbEdit(ta, converted, lineStart, lineEnd);
+    onNoteInput(ta.value);
+    return;
   }
-  const text = (line.trim() === '' ? '' : '\n') + marker;
-  ta.setRangeText(text, pos, ta.selectionEnd, 'end');
+
+  const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+  const line = val.slice(lineStart, start);
+  const marker = type === 'num' ? nbNextNumber(val, lineStart) + '. ' : '☐ ';
+  nbEdit(ta, (line.trim() === '' ? '' : '\n') + marker, start, end);
   onNoteInput(ta.value);
 }
 
@@ -3774,17 +3806,17 @@ function nbKeydown(e) {
   if ((m = line.match(/^(\d+)\.\s?/))) {
     e.preventDefault();
     if (line.trim() === m[1] + '.') {
-      ta.setRangeText('', lineStart, pos, 'end'); // empty item → end the list
+      nbEdit(ta, '', lineStart, pos); // empty item → end the list
     } else {
-      ta.setRangeText('\n' + (parseInt(m[1], 10) + 1) + '. ', pos, ta.selectionEnd, 'end');
+      nbEdit(ta, '\n' + (parseInt(m[1], 10) + 1) + '. ', pos, ta.selectionEnd);
     }
     onNoteInput(ta.value);
   } else if ((m = line.match(/^([☐☑])\s?/))) {
     e.preventDefault();
     if (line.trim() === m[1]) {
-      ta.setRangeText('', lineStart, pos, 'end'); // empty item → end the list
+      nbEdit(ta, '', lineStart, pos); // empty item → end the list
     } else {
-      ta.setRangeText('\n☐ ', pos, ta.selectionEnd, 'end');
+      nbEdit(ta, '\n☐ ', pos, ta.selectionEnd);
     }
     onNoteInput(ta.value);
   }
@@ -3798,7 +3830,7 @@ function nbClick(e) {
   const lineStart = val.lastIndexOf('\n', pos - 1) + 1;
   const ch = val.charAt(lineStart);
   if ((ch === '☐' || ch === '☑') && pos <= lineStart + 1) {
-    ta.setRangeText(ch === '☐' ? '☑' : '☐', lineStart, lineStart + 1, 'preserve');
+    nbEdit(ta, ch === '☐' ? '☑' : '☐', lineStart, lineStart + 1);
     onNoteInput(ta.value);
   }
 }
