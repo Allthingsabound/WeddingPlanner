@@ -2513,10 +2513,7 @@ function hideSetupScreen() {
 }
 
 function showWeddingCode() {
-  if (!currentWeddingId) return;
-  document.getElementById('weddingCodeText').textContent = currentWeddingId;
-  document.getElementById('weddingCodeDisplay').style.display = '';
-  document.getElementById('inviteCodeDot').style.display = '';
+  // Code is surfaced via toast / Account Link button
 }
 
 async function copyWeddingCode() {
@@ -2541,8 +2538,7 @@ async function getInviteCode() {
     await db.collection('users').doc(currentUser.uid).set({ weddingId: code });
     await db.collection('weddings').doc(code).set({ data: state });
     currentWeddingId = code;
-    showWeddingCode();
-    toast('Your invite code: ' + code + ' — tap Account Link to copy');
+    await copyWeddingCode();
   } catch (ex) {
     toast('Could not create code. Check your connection.');
   }
