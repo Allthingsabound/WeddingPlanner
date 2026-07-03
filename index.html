@@ -2250,6 +2250,21 @@
   <button class="link-btn" onclick="openSyncModal()">Account Sync</button>
 </footer>
 
+<!-- Invite code display modal -->
+<div class="sync-modal" id="inviteModal" style="display:none" onclick="if(event.target===this)closeInviteModal()">
+  <div class="sync-modal-card">
+    <div class="sync-modal-title">Your <em>Invite Code</em></div>
+    <p class="sync-modal-sub">Share this code with your partner so they can join your planner</p>
+    <div style="display:flex;gap:8px;align-items:center;margin:8px 0">
+      <input class="lock-input" id="inviteCodeDisplay" type="text" readonly
+             style="text-align:center;font-size:1.3rem;font-weight:700;letter-spacing:.15em;cursor:pointer;margin:0"
+             onclick="this.select()" />
+    </div>
+    <button class="btn-primary lock-btn" onclick="copyInviteCode()">Copy Code</button>
+    <button class="btn-ghost" style="width:100%;margin-top:8px" onclick="closeInviteModal()">Done</button>
+  </div>
+</div>
+
 <!-- Account Sync modal -->
 <div class="sync-modal" id="syncModal" style="display:none" onclick="if(event.target===this)closeSyncModal()">
   <div class="sync-modal-card">
@@ -2516,31 +2531,46 @@ function showWeddingCode() {
   // Code is surfaced via toast / Account Link button
 }
 
-async function copyWeddingCode() {
+function showInviteModal(code) {
+  document.getElementById('inviteCodeDisplay').value = code;
+  document.getElementById('inviteModal').style.display = 'flex';
+}
+
+function closeInviteModal() {
+  document.getElementById('inviteModal').style.display = 'none';
+}
+
+async function copyInviteCode() {
+  const code = document.getElementById('inviteCodeDisplay').value;
   try {
-    await navigator.clipboard.writeText(currentWeddingId);
-    toast('Invite code copied!');
+    await navigator.clipboard.writeText(code);
+    toast('Code copied to clipboard!');
   } catch (ex) {
-    toast('Your code: ' + currentWeddingId);
+    document.getElementById('inviteCodeDisplay').select();
+    toast('Select the code above and copy it');
   }
 }
 
+async function copyWeddingCode() {
+  if (!currentWeddingId) return;
+  showInviteModal(currentWeddingId);
+}
+
 async function getInviteCode() {
-  if (!currentUser) return;
+  if (!currentUser) { toast('Please sign in first.'); return; }
   if (currentWeddingId) {
-    // Already have a code — just copy it
-    await copyWeddingCode();
+    showInviteModal(currentWeddingId);
     return;
   }
-  // Generate a fresh code and save it
+  // No code yet — generate one
   try {
     const code = generateWeddingCode();
     await db.collection('users').doc(currentUser.uid).set({ weddingId: code });
     await db.collection('weddings').doc(code).set({ data: state });
     currentWeddingId = code;
-    await copyWeddingCode();
+    showInviteModal(code);
   } catch (ex) {
-    toast('Could not create code. Check your connection.');
+    toast('Could not create code — check your connection.');
   }
 }
 
