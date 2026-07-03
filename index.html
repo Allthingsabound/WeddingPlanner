@@ -2301,6 +2301,12 @@ firebase.initializeApp(firebaseConfig);
 </script>
 
 <script>
+// Enable Firestore offline persistence so the app still works on poor connections
+// and queues writes to sync when the connection returns.
+firebase.firestore().enablePersistence({ synchronizeTabs: true }).catch(() => {});
+</script>
+
+<script>
 // ── STATE ──
 let state = {
   vision: [],
@@ -2643,7 +2649,9 @@ async function syncWithCode() {
     toast('Synced! You\'re now sharing this planner ♡');
   } catch (ex) {
     if (ex.code === 'permission-denied') {
-      errEl.textContent = 'Permission denied — your Firestore rules may have expired. See instructions below.';
+      errEl.textContent = 'Permission denied — check your Firestore rules in the Firebase Console.';
+    } else if (ex.message && ex.message.includes('offline')) {
+      errEl.textContent = 'Your device can\'t reach Firebase. Try: turn off any ad blockers/content blockers, or switch from WiFi to mobile data, then try again.';
     } else {
       errEl.textContent = 'Error: ' + (ex.message || 'Something went wrong. Check your connection.');
     }
