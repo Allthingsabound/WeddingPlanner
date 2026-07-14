@@ -1710,7 +1710,7 @@
     <div class="countdown-block" id="countdownBlock">
       <div class="countdown-eyebrow">The Big Day</div>
       <div class="countdown-date-row">
-        <input type="date" id="weddingDateInput" onchange="saveWeddingDate()" class="countdown-date-picker" />
+        <input type="date" id="weddingDateInput" onchange="saveWeddingDate()" class="countdown-date-picker" title="Change the wedding date" aria-label="Wedding date" />
         <label for="weddingDateInput" class="countdown-date-label" id="countdownDateLabel">Set your wedding date →</label>
       </div>
       <div class="countdown-tiles" id="countdownTiles" style="display:none">
@@ -4085,23 +4085,14 @@ function startCountdown() {
   document.getElementById('weddingDateInput').value = dateStr;
 }
 
-// Make label click open the date picker
-document.getElementById('countdownDateLabel').addEventListener('click', () => {
-  const inp = document.getElementById('weddingDateInput');
-  inp.style.opacity = '1';
-  inp.style.position = 'static';
-  inp.style.width = 'auto';
-  inp.style.height = 'auto';
-  inp.style.pointerEvents = 'auto';
-  inp.focus();
-  inp.click();
-  setTimeout(() => {
-    inp.style.opacity = '0';
-    inp.style.position = 'absolute';
-    inp.style.width = '0';
-    inp.style.height = '0';
-    inp.style.pointerEvents = 'none';
-  }, 300);
+// The transparent date input covers the whole date row, so tapping the row
+// (including the displayed date) opens the native picker — before AND after a
+// date is set. showPicker() forces the calendar open on browsers that only
+// focus the field on click.
+document.getElementById('weddingDateInput').addEventListener('click', (e) => {
+  if (typeof e.target.showPicker === 'function') {
+    try { e.target.showPicker(); } catch (err) {}
+  }
 });
 
 // ── HONEYMOON ──
