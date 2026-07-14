@@ -4030,10 +4030,20 @@ function renderNotes() {
 let countdownInterval = null;
 
 function saveWeddingDate() {
-  const val = document.getElementById('weddingDateInput').value;
+  const inp = document.getElementById('weddingDateInput');
+  const val = inp.value;
+  // Confirm only when CHANGING an existing date (not on first set)
+  if (state.weddingDate && val && val !== state.weddingDate) {
+    const pretty = new Date(val + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    if (!confirm('Change the wedding date to ' + pretty + '? This updates the countdown for both of you.')) {
+      inp.value = state.weddingDate;
+      return;
+    }
+  }
   state.weddingDate = val;
   save();
   startCountdown();
+  if (val) toast('Wedding date saved ✓');
 }
 
 function startCountdown() {
