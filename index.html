@@ -752,6 +752,14 @@
   }
   .nb-tab:hover .nb-tab-del, .nb-tab.active .nb-tab-del { opacity: 0.7; }
   .nb-tab-del:hover { color: var(--danger); opacity: 1 !important; }
+  .nb-tab-move {
+    background: none; border: none; cursor: pointer; line-height: 1;
+    font-size: 0.7rem; color: var(--muted); opacity: 0; padding: 0 1px;
+    transition: opacity 0.15s, color 0.15s;
+  }
+  .nb-tab:hover .nb-tab-move, .nb-tab.active .nb-tab-move { opacity: 0.6; }
+  .nb-tab-move:hover:not(:disabled) { color: var(--mocha); opacity: 1 !important; }
+  .nb-tab-move:disabled { opacity: 0.12 !important; cursor: default; }
   .nb-add-tab {
     background: none; border: none; cursor: pointer;
     font-size: 1.2rem; color: var(--muted); padding: 3px 10px 5px;
@@ -3854,6 +3862,16 @@ function switchNote(id) {
   renderNotes();
 }
 
+function moveNote(id, dir) {
+  const idx = state.notes.findIndex(n => n.id === id);
+  const newIdx = idx + dir;
+  if (idx === -1 || newIdx < 0 || newIdx >= state.notes.length) return;
+  const [moved] = state.notes.splice(idx, 1);
+  state.notes.splice(newIdx, 0, moved);
+  save();
+  renderNotes();
+}
+
 function prevNote() {
   const i = state.notes.findIndex(n => n.id === activeNoteId);
   if (i > 0) switchNote(state.notes[i - 1].id);
@@ -4023,12 +4041,22 @@ function renderNotes() {
     : state.notes;
   const tabs = document.getElementById('nbTabs');
   if (tabs) {
-    const tabHtml = visible.map(n => `
+    // Reordering moves a page's real position in state.notes, so only offer
+    // it when the tab list isn't filtered down to a search subset.
+    const canReorder = !nbQuery;
+    const tabHtml = visible.map(n => {
+      const idx = state.notes.findIndex(x => x.id === n.id);
+      const isFirst = idx <= 0;
+      const isLast = idx >= state.notes.length - 1;
+      return `
       <div class="nb-tab${n.id === activeNoteId ? ' active' : ''}" onclick="switchNote(${n.id})">
+        ${canReorder ? `<button class="nb-tab-move" ${isFirst ? 'disabled' : ''} onclick="event.stopPropagation();moveNote(${n.id},-1)" title="Move earlier">‹</button>` : ''}
         <span class="nb-tab-label">${esc(noteLabel(n.text))}</span>
+        ${canReorder ? `<button class="nb-tab-move" ${isLast ? 'disabled' : ''} onclick="event.stopPropagation();moveNote(${n.id},1)" title="Move later">›</button>` : ''}
         <span class="nb-tab-del" onclick="event.stopPropagation();deleteNote(${n.id})" title="Delete page">✕</span>
       </div>
-    `).join('');
+    `;
+    }).join('');
     const noMatch = nbQuery && visible.length === 0
       ? '<span style="font-size:0.72rem;color:var(--muted);padding:6px 8px">No pages match</span>' : '';
     tabs.innerHTML = tabHtml + noMatch + '<button class="nb-add-tab" onclick="addNote()" title="New page">+</button>';
