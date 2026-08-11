@@ -4571,6 +4571,7 @@ function buildBudget() {
             <div class="budget-line-right">
               <span class="budget-line-dollar">$</span>
               <input class="budget-line-amt-input" type="number" min="0" step="1" value="${item.a}"
+                oninput="liveBudgetTotal()"
                 onchange="updateBudgetItem('${sec.id}','${item.id}','a',this.value)" />
               <button class="budget-line-del" onclick="deleteBudgetItem('${sec.id}','${item.id}')" title="Delete item">✕</button>
             </div>
@@ -4593,6 +4594,23 @@ function buildBudget() {
 
   const totalEl = document.getElementById('budgetGrandTotalAmt');
   if (totalEl) totalEl.textContent = '$' + grandTotal.toLocaleString();
+}
+
+// Recompute totals straight from the visible price inputs as you type,
+// instead of waiting for blur (onchange) to fire before anything updates.
+function liveBudgetTotal() {
+  let grand = 0;
+  document.querySelectorAll('#budgetBreakdown .budget-section').forEach(secEl => {
+    let secTotal = 0;
+    secEl.querySelectorAll('.budget-line .budget-line-amt-input').forEach(inp => {
+      secTotal += Number(inp.value) || 0;
+    });
+    grand += secTotal;
+    const amtEl = secEl.querySelector('.budget-sec-amt');
+    if (amtEl) amtEl.textContent = secTotal > 0 ? '$' + secTotal.toLocaleString() : 'free';
+  });
+  const totalEl = document.getElementById('budgetGrandTotalAmt');
+  if (totalEl) totalEl.textContent = '$' + grand.toLocaleString();
 }
 
 function toggleBudgetSec(secId) {
