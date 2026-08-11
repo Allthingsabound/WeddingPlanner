@@ -1767,24 +1767,62 @@
 
     <!-- BUDGET BREAKDOWN -->
     <h2 style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:400;color:var(--text);margin:2.5rem 0 0.25rem;letter-spacing:0.02em"><em>Budget</em> Breakdown</h2>
-    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.25rem">Full $14,000 plan · tap any category to expand</p>
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.25rem">Tap a category to expand · tap any name, note, or price to edit it</p>
 
     <style>
       .budget-section { border:1px solid var(--border,#e8ddd5); border-radius:12px; margin-bottom:0.75rem; overflow:hidden; }
-      .budget-sec-hdr { display:flex; justify-content:space-between; align-items:center; padding:0.75rem 1rem; background:var(--card,#fdf9f6); cursor:pointer; user-select:none; }
+      .budget-sec-hdr { display:flex; justify-content:space-between; align-items:center; padding:0.75rem 1rem; background:var(--card,#fdf9f6); cursor:pointer; user-select:none; gap:0.75rem; }
       .budget-sec-hdr:hover { background:var(--bg,#faf6f1); }
-      .budget-sec-title { font-size:0.9rem; font-weight:500; color:var(--text,#2c2420); display:flex; align-items:center; gap:0.5rem; }
-      .budget-sec-right { display:flex; align-items:center; gap:0.75rem; }
-      .budget-sec-amt { font-size:0.9rem; font-weight:600; color:var(--accent,#8b6f5e); }
+      .budget-sec-title-input {
+        font-size:0.9rem; font-weight:500; color:var(--text,#2c2420); flex:1; min-width:0;
+        background:transparent; border:none; outline:none; padding:2px 4px; border-radius:4px;
+        font-family:'Inter',sans-serif; cursor:text;
+      }
+      .budget-sec-title-input:hover, .budget-sec-title-input:focus { background:rgba(255,255,255,0.6); box-shadow:0 0 0 1px var(--sand,#c9a98a); }
+      .budget-sec-right { display:flex; align-items:center; gap:0.6rem; flex-shrink:0; }
+      .budget-sec-amt { font-size:0.9rem; font-weight:600; color:var(--accent,#8b6f5e); white-space:nowrap; }
+      .budget-sec-del { background:none; border:none; cursor:pointer; color:var(--muted,#a08070); font-size:0.78rem; padding:2px 4px; border-radius:4px; transition:color 0.15s; }
+      .budget-sec-del:hover { color:var(--danger); }
       .budget-chev { font-size:0.75rem; color:var(--muted,#a08070); transition:transform .2s; }
       .budget-chev.open { transform:rotate(180deg); }
       .budget-lines { display:none; }
       .budget-lines.open { display:block; }
-      .budget-line { display:flex; justify-content:space-between; align-items:start; padding:0.6rem 1rem; border-top:1px solid var(--border,#e8ddd5); gap:1rem; }
+      .budget-line { display:flex; justify-content:space-between; align-items:center; padding:0.5rem 1rem; border-top:1px solid var(--border,#e8ddd5); gap:0.75rem; }
       .budget-line:nth-child(even) { background:rgba(255,255,255,0.5); }
-      .budget-line-name { font-size:0.82rem; color:var(--text,#2c2420); flex:1; }
-      .budget-line-note { font-size:0.72rem; color:var(--muted,#a08070); font-style:italic; margin-top:2px; }
-      .budget-line-amt { font-size:0.82rem; font-weight:500; color:var(--accent,#8b6f5e); white-space:nowrap; }
+      .budget-line-fields { flex:1; min-width:0; display:flex; flex-direction:column; }
+      .budget-line-input {
+        background:transparent; border:none; outline:none; font-family:'Inter',sans-serif;
+        padding:2px 4px; border-radius:4px; width:100%; color:var(--text,#2c2420);
+      }
+      .budget-line-input:hover, .budget-line-input:focus { background:rgba(255,255,255,0.7); box-shadow:0 0 0 1px var(--sand,#c9a98a); }
+      .budget-line-input.name { font-size:0.82rem; }
+      .budget-line-input.note { font-size:0.72rem; color:var(--muted,#a08070); font-style:italic; margin-top:2px; }
+      .budget-line-right { display:flex; align-items:center; gap:2px; flex-shrink:0; }
+      .budget-line-dollar { font-size:0.82rem; color:var(--accent,#8b6f5e); font-weight:500; }
+      .budget-line-amt-input {
+        width:70px; text-align:right; font-size:0.82rem; font-weight:500; color:var(--accent,#8b6f5e);
+        background:transparent; border:none; outline:none; font-family:'Inter',sans-serif;
+        padding:2px 4px; border-radius:4px; -moz-appearance:textfield;
+      }
+      .budget-line-amt-input:hover, .budget-line-amt-input:focus { background:rgba(255,255,255,0.7); box-shadow:0 0 0 1px var(--sand,#c9a98a); }
+      .budget-line-amt-input::-webkit-outer-spin-button, .budget-line-amt-input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+      .budget-line-del { background:none; border:none; cursor:pointer; color:var(--muted,#a08070); font-size:0.76rem; padding:2px 4px; border-radius:4px; transition:color 0.15s; flex-shrink:0; }
+      .budget-line-del:hover { color:var(--danger); }
+      .budget-add-line { display:flex; align-items:center; gap:0.5rem; padding:0.6rem 1rem; border-top:1px dashed var(--border,#e8ddd5); }
+      .budget-add-line .budget-line-input.name { flex:1; }
+      .budget-add-line .budget-line-amt-input { width:70px; text-align:left; }
+      .budget-add-btn {
+        background:none; border:1px dashed var(--sand,#c9a98a); border-radius:8px; cursor:pointer;
+        color:var(--mocha); font-size:0.76rem; padding:0.4rem 0.8rem; white-space:nowrap;
+        font-family:'Inter',sans-serif; transition:all 0.15s; flex-shrink:0;
+      }
+      .budget-add-btn:hover { background:var(--petal); border-style:solid; }
+      .budget-add-section { display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem; }
+      .budget-add-section input {
+        flex:1; padding:0.6rem 0.9rem; border:1px solid var(--blush); border-radius:8px;
+        font-family:'Inter',sans-serif; font-size:0.82rem; background:white; color:var(--text); outline:none;
+      }
+      .budget-add-section input:focus { border-color:var(--sand); }
       .budget-grand-total { background:var(--accent,#8b6f5e); color:#fff; border-radius:12px; padding:1rem 1.25rem; display:flex; justify-content:space-between; align-items:center; margin-top:1rem; }
       .budget-grand-total .lbl { font-size:0.82rem; opacity:0.85; letter-spacing:0.05em; text-transform:uppercase; }
       .budget-grand-total .amt { font-family:'Cormorant Garamond',serif; font-size:1.6rem; font-weight:600; }
@@ -1799,7 +1837,7 @@
 
     <div class="budget-grand-total">
       <div class="lbl">Total confirmed budget</div>
-      <div class="amt">$14,000</div>
+      <div class="amt" id="budgetGrandTotalAmt">$0</div>
     </div>
 
     <div class="budget-monthly">
@@ -2499,7 +2537,8 @@ let state = {
   customPalette: null,
   honeymoon: { destination: '', depart: '', returnDate: '', hotel: '', confirm: '', hotelNotes: '', budget: '', spent: '', activities: [], packing: [] },
   apartment: { income: '', expenses: '', utilities: '', apartments: [], viewings: [], musts: [], nices: [], questions: [], tasks: [] },
-  registry: []
+  registry: [],
+  budget: []
 };
 
 const STORAGE_KEY = 'weddingHub_airy_v1';
@@ -4422,7 +4461,7 @@ function toggleAptTask(id) { const t = state.apartment.tasks.find(t => t.id === 
 function deleteAptTask(id) { state.apartment.tasks = state.apartment.tasks.filter(t => t.id !== id); save(); renderApartment(); }
 
 // ── BUDGET BREAKDOWN ──
-const BUDGET_SECTIONS = [
+const DEFAULT_BUDGET_SECTIONS = [
   { emoji:'⛪', label:'Church Ceremony — Philadelphia', amt:90, items:[
     { n:'Marriage license — Philadelphia', a:90, note:'City Hall Room 413; cash/money order; both in person' },
     { n:'Church venue fee', a:0, note:"Your pastor's church — free" },
@@ -4478,36 +4517,152 @@ const BUDGET_SECTIONS = [
   ]},
 ];
 
-function buildBudget() {
-  const container = document.getElementById('budgetBreakdown');
-  if (!container) return;
-  container.innerHTML = BUDGET_SECTIONS.map((sec, i) => `
-    <div class="budget-section">
-      <div class="budget-sec-hdr" onclick="toggleBudgetSec(${i})">
-        <div class="budget-sec-title">${sec.emoji} ${esc(sec.label)}</div>
-        <div class="budget-sec-right">
-          <div class="budget-sec-amt">${sec.amt > 0 ? '$' + sec.amt.toLocaleString() : 'free'}</div>
-          <div class="budget-chev" id="bchev-${i}">▾</div>
-        </div>
-      </div>
-      <div class="budget-lines" id="blines-${i}">
-        ${sec.items.map(item => `
-          <div class="budget-line">
-            <div>
-              <div class="budget-line-name">${esc(item.n)}</div>
-              ${item.note ? `<div class="budget-line-note">${esc(item.note)}</div>` : ''}
-            </div>
-            <div class="budget-line-amt">${item.a > 0 ? '$' + item.a.toLocaleString() : 'free'}</div>
-          </div>`).join('')}
-      </div>
-    </div>`).join('');
+function seedBudget() {
+  if (state.budget && state.budget.length > 0) return;
+  state.budget = DEFAULT_BUDGET_SECTIONS.map((sec, si) => ({
+    id: 'sec' + si + '-' + Date.now(),
+    label: sec.emoji + ' ' + sec.label,
+    items: sec.items.map((it, ii) => ({
+      id: 'item' + si + '-' + ii + '-' + Date.now(),
+      n: it.n, a: it.a, note: it.note || ''
+    }))
+  }));
+  save();
 }
 
-function toggleBudgetSec(i) {
-  const lines = document.getElementById('blines-' + i);
-  const chev  = document.getElementById('bchev-' + i);
+function newBudgetId(prefix) {
+  return prefix + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+}
+
+// Section open/closed state is tracked separately from state.budget so it
+// survives the full re-render that happens after every edit.
+let openBudgetSections = new Set();
+
+function buildBudget() {
+  seedBudget();
+  const container = document.getElementById('budgetBreakdown');
+  if (!container) return;
+  let grandTotal = 0;
+  container.innerHTML = state.budget.map((sec) => {
+    const secTotal = sec.items.reduce((s, it) => s + (Number(it.a) || 0), 0);
+    grandTotal += secTotal;
+    const isOpen = openBudgetSections.has(sec.id);
+    return `
+    <div class="budget-section">
+      <div class="budget-sec-hdr" onclick="toggleBudgetSec('${sec.id}')">
+        <input class="budget-sec-title-input" value="${esc(sec.label)}"
+          onclick="event.stopPropagation()"
+          onchange="updateBudgetSectionLabel('${sec.id}', this.value)" />
+        <div class="budget-sec-right">
+          <div class="budget-sec-amt">${secTotal > 0 ? '$' + secTotal.toLocaleString() : 'free'}</div>
+          <button class="budget-sec-del" onclick="event.stopPropagation();deleteBudgetSection('${sec.id}')" title="Delete category">✕</button>
+          <div class="budget-chev${isOpen ? ' open' : ''}" id="bchev-${sec.id}">▾</div>
+        </div>
+      </div>
+      <div class="budget-lines${isOpen ? ' open' : ''}" id="blines-${sec.id}">
+        ${sec.items.map(item => `
+          <div class="budget-line">
+            <div class="budget-line-fields">
+              <input class="budget-line-input name" value="${esc(item.n)}" placeholder="Item name"
+                onchange="updateBudgetItem('${sec.id}','${item.id}','n',this.value)" />
+              <input class="budget-line-input note" value="${esc(item.note || '')}" placeholder="Note (optional)"
+                onchange="updateBudgetItem('${sec.id}','${item.id}','note',this.value)" />
+            </div>
+            <div class="budget-line-right">
+              <span class="budget-line-dollar">$</span>
+              <input class="budget-line-amt-input" type="number" min="0" step="1" value="${item.a}"
+                onchange="updateBudgetItem('${sec.id}','${item.id}','a',this.value)" />
+              <button class="budget-line-del" onclick="deleteBudgetItem('${sec.id}','${item.id}')" title="Delete item">✕</button>
+            </div>
+          </div>`).join('')}
+        <div class="budget-add-line">
+          <input class="budget-line-input name" id="newItemName-${sec.id}" placeholder="+ Add an item…"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();addBudgetItem('${sec.id}')}" />
+          <input class="budget-line-amt-input" type="number" min="0" step="1" id="newItemAmt-${sec.id}" placeholder="0"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();addBudgetItem('${sec.id}')}" />
+          <button class="budget-add-btn" onclick="addBudgetItem('${sec.id}')">+ Add</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('') + `
+    <div class="budget-add-section">
+      <input id="newCatName" placeholder="+ New category name (e.g. 🎊 Décor)"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();addBudgetSection()}" />
+      <button class="budget-add-btn" onclick="addBudgetSection()">+ Add Category</button>
+    </div>`;
+
+  const totalEl = document.getElementById('budgetGrandTotalAmt');
+  if (totalEl) totalEl.textContent = '$' + grandTotal.toLocaleString();
+}
+
+function toggleBudgetSec(secId) {
+  const lines = document.getElementById('blines-' + secId);
+  const chev  = document.getElementById('bchev-' + secId);
   const isOpen = lines.classList.toggle('open');
   chev.classList.toggle('open', isOpen);
+  if (isOpen) openBudgetSections.add(secId); else openBudgetSections.delete(secId);
+}
+
+function updateBudgetSectionLabel(secId, val) {
+  const sec = state.budget.find(s => s.id === secId);
+  if (!sec) return;
+  sec.label = val.trim() || 'Untitled category';
+  save();
+}
+
+function deleteBudgetSection(secId) {
+  const sec = state.budget.find(s => s.id === secId);
+  const label = sec ? sec.label : 'this category';
+  if (!confirm('Delete "' + label + '" and all its items? This can\'t be undone.')) return;
+  state.budget = state.budget.filter(s => s.id !== secId);
+  save();
+  buildBudget();
+}
+
+function addBudgetSection() {
+  const input = document.getElementById('newCatName');
+  const name = input.value.trim();
+  if (!name) return;
+  state.budget.push({ id: newBudgetId('sec'), label: name, items: [] });
+  save();
+  buildBudget();
+}
+
+function updateBudgetItem(secId, itemId, field, val) {
+  const sec = state.budget.find(s => s.id === secId);
+  const item = sec && sec.items.find(it => it.id === itemId);
+  if (!item) return;
+  if (field === 'a') {
+    item.a = Math.max(0, Number(val) || 0);
+  } else {
+    item[field] = val;
+  }
+  save();
+  buildBudget();
+}
+
+function deleteBudgetItem(secId, itemId) {
+  const sec = state.budget.find(s => s.id === secId);
+  if (!sec) return;
+  sec.items = sec.items.filter(it => it.id !== itemId);
+  save();
+  buildBudget();
+}
+
+function addBudgetItem(secId) {
+  const sec = state.budget.find(s => s.id === secId);
+  if (!sec) return;
+  const nameInput = document.getElementById('newItemName-' + secId);
+  const amtInput  = document.getElementById('newItemAmt-' + secId);
+  const name = nameInput.value.trim();
+  if (!name) { nameInput.focus(); return; }
+  const amt = Math.max(0, Number(amtInput.value) || 0);
+  sec.items.push({ id: newBudgetId('item'), n: name, a: amt, note: '' });
+  openBudgetSections.add(secId); // keep it open so people can add several items quickly
+  save();
+  buildBudget();
+  const freshNameInput = document.getElementById('newItemName-' + secId);
+  if (freshNameInput) freshNameInput.focus();
 }
 
 // ── GIFT REGISTRY ──
