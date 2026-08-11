@@ -654,7 +654,10 @@
   }
   .cl-item-text-input:hover, .cl-item-text-input:focus,
   .cl-item-month-input:hover, .cl-item-month-input:focus { background: rgba(255,255,255,0.7); box-shadow: 0 0 0 1px var(--sand); }
-  .cl-item-text-input { font-size: 0.81rem; line-height: 1.45; }
+  .cl-item-text-input {
+    font-size: 0.81rem; line-height: 1.45; resize: none; overflow: hidden;
+    display: block; height: auto; min-height: 1.45em;
+  }
   .cl-item-month-input { font-size: 0.63rem; color: var(--sand); letter-spacing: 0.04em; text-transform: uppercase; margin-top: 2px; }
   .cl-item-del {
     background: none; border: none; cursor: pointer;
@@ -2778,6 +2781,7 @@ async function loadWeddingData() {
         const btn = document.querySelector('.nav-tabs button[data-page="' + state.activePage + '"]');
         if (target) target.classList.add('active');
         if (btn) btn.classList.add('active');
+        if (state.activePage === 'checklist') growAllClTextareas();
       }
     } else {
       // Wedding doc doesn't exist yet — upload current local data
@@ -3207,6 +3211,7 @@ function showPage(id, btn) {
   if (activeBtn) activeBtn.classList.add('active');
   state.activePage = id;
   save();
+  if (id === 'checklist') growAllClTextareas();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -3799,15 +3804,29 @@ function renderChecklist() {
           <div class="cl-item ${t.done ? 'done' : ''}">
             <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask(${t.id})" />
             <div class="cl-item-fields">
-              <input class="cl-item-text-input" value="${esc(t.text)}" placeholder="Task"
-                onchange="updateTaskText(${t.id}, this.value)" />
+              <textarea class="cl-item-text-input" rows="1" placeholder="Task"
+                oninput="clAutoGrow(this)"
+                onchange="updateTaskText(${t.id}, this.value)">${esc(t.text)}</textarea>
               <input class="cl-item-month-input" value="${esc(t.month || '')}" placeholder="Timeline (optional)"
                 onchange="updateTaskMonth(${t.id}, this.value)" />
             </div>
             <button class="cl-item-del" onclick="deleteTask(${t.id})" title="Remove">✕</button>
           </div>`).join('')
       : '<div style="padding:1.2rem 1rem;font-size:0.78rem;color:var(--muted);font-style:italic">Nothing here yet</div>';
+    itemsEl.querySelectorAll('.cl-item-text-input').forEach(clAutoGrow);
   });
+}
+
+// Grow a task textarea to fit its content instead of scrolling/clipping it.
+// scrollHeight reads as 0 while the Checklist tab is display:none, so this
+// must be re-run once the tab is actually visible, not just at render time.
+function clAutoGrow(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+function growAllClTextareas() {
+  document.querySelectorAll('.cl-item-text-input').forEach(clAutoGrow);
 }
 
 // ── NOTES ──
@@ -4917,6 +4936,7 @@ auth.onAuthStateChanged(async user => {
           const _btn = document.querySelector('.nav-tabs button[data-page="' + state.activePage + '"]');
           if (_target) _target.classList.add('active');
           if (_btn) _btn.classList.add('active');
+          if (state.activePage === 'checklist') growAllClTextareas();
         }
         loadWeddingData(); // Sync latest cloud data in background
       } else {
