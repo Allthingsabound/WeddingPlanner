@@ -645,10 +645,17 @@
   .cl-item:last-child { border-bottom: none; }
   .cl-item:hover { background: var(--petal); }
   .cl-item.done { opacity: 0.5; }
-  .cl-item.done .cl-item-text { text-decoration: line-through; color: var(--muted); }
+  .cl-item.done .cl-item-text-input { text-decoration: line-through; color: var(--muted); }
   .cl-item input[type="checkbox"] { accent-color: var(--mocha); cursor: pointer; flex-shrink: 0; margin-top: 3px; }
-  .cl-item-text { flex: 1; color: var(--text); }
-  .cl-item-month { font-size: 0.63rem; color: var(--sand); letter-spacing: 0.04em; text-transform: uppercase; display: block; margin-top: 2px; }
+  .cl-item-fields { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .cl-item-text-input, .cl-item-month-input {
+    background: transparent; border: none; outline: none; width: 100%;
+    font-family: 'Inter', sans-serif; color: var(--text); padding: 1px 4px; border-radius: 4px;
+  }
+  .cl-item-text-input:hover, .cl-item-text-input:focus,
+  .cl-item-month-input:hover, .cl-item-month-input:focus { background: rgba(255,255,255,0.7); box-shadow: 0 0 0 1px var(--sand); }
+  .cl-item-text-input { font-size: 0.81rem; line-height: 1.45; }
+  .cl-item-month-input { font-size: 0.63rem; color: var(--sand); letter-spacing: 0.04em; text-transform: uppercase; margin-top: 2px; }
   .cl-item-del {
     background: none; border: none; cursor: pointer;
     color: var(--blush); font-size: 0.72rem;
@@ -3757,6 +3764,20 @@ function deleteTask(id) {
   save(); renderChecklist();
 }
 
+function updateTaskText(id, val) {
+  const t = state.tasks.find(t => t.id === id);
+  if (!t) return;
+  t.text = val.trim();
+  save();
+}
+
+function updateTaskMonth(id, val) {
+  const t = state.tasks.find(t => t.id === id);
+  if (!t) return;
+  t.month = val.trim();
+  save();
+}
+
 function renderChecklist() {
   Object.entries(BUCKET_IDS).forEach(([bucket, slug]) => {
     const items = (state.tasks || []).filter(t => (t.bucket || 'To Do') === bucket);
@@ -3769,10 +3790,12 @@ function renderChecklist() {
       ? items.map(t => `
           <div class="cl-item ${t.done ? 'done' : ''}">
             <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTask(${t.id})" />
-            <span class="cl-item-text">
-              ${esc(t.text)}
-              ${t.month ? `<span class="cl-item-month">${esc(t.month)}</span>` : ''}
-            </span>
+            <div class="cl-item-fields">
+              <input class="cl-item-text-input" value="${esc(t.text)}" placeholder="Task"
+                onchange="updateTaskText(${t.id}, this.value)" />
+              <input class="cl-item-month-input" value="${esc(t.month || '')}" placeholder="Timeline (optional)"
+                onchange="updateTaskMonth(${t.id}, this.value)" />
+            </div>
             <button class="cl-item-del" onclick="deleteTask(${t.id})" title="Remove">✕</button>
           </div>`).join('')
       : '<div style="padding:1.2rem 1rem;font-size:0.78rem;color:var(--muted);font-style:italic">Nothing here yet</div>';
