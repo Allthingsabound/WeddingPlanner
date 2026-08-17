@@ -337,11 +337,19 @@
     padding: 0.6rem 0;
     border-bottom: 1px solid var(--petal);
     font-size: 0.82rem;
+    gap: 0.75rem;
   }
 
   .log-entry:last-child { border-bottom: none; }
   .log-amount { font-weight: 600; color: var(--success); }
   .log-date { color: var(--muted); font-size: 0.75rem; }
+  .log-entry-right { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
+  .log-del {
+    background: none; border: none; cursor: pointer;
+    color: var(--blush); font-size: 0.75rem; padding: 2px;
+    transition: color 0.15s;
+  }
+  .log-del:hover { color: var(--danger); }
 
   /* ── VENDORS ── */
   .vendor-add-form {
@@ -3318,11 +3326,21 @@ function addDeposit() {
   const amt = parseFloat(document.getElementById('depositInput').value);
   if (!amt || amt <= 0) return;
   state.savings.saved += amt;
-  state.savings.log.unshift({ amount: amt, date: new Date().toLocaleDateString() });
+  state.savings.log.unshift({ id: Date.now(), amount: amt, date: new Date().toLocaleDateString() });
   document.getElementById('depositInput').value = '';
   save();
   renderSavings();
   toast('Added $' + amt.toLocaleString() + ' to savings ✓');
+}
+
+function deleteDeposit(id) {
+  const entry = state.savings.log.find(l => l.id === id);
+  if (!entry) return;
+  if (!confirm('Remove this $' + entry.amount.toLocaleString() + ' deposit? This will also subtract it from your saved total.')) return;
+  state.savings.saved = Math.max(0, state.savings.saved - entry.amount);
+  state.savings.log = state.savings.log.filter(l => l.id !== id);
+  save();
+  renderSavings();
 }
 
 function updateSavings() {
@@ -3334,6 +3352,11 @@ function updateSavings() {
 
 function renderSavings() {
   const { goal, saved, log } = state.savings;
+  // Backfill ids for deposits saved before delete existed, so each entry
+  // can be targeted individually instead of accidentally matching another.
+  let idsAdded = false;
+  log.forEach((l, i) => { if (l.id === undefined) { l.id = Date.now() + i; idsAdded = true; } });
+  if (idsAdded) save();
   document.getElementById('savedDisplay').textContent = saved.toLocaleString('en-US', {minimumFractionDigits: 0});
   document.getElementById('savingsOf').textContent = `of $${goal.toLocaleString()} goal`;
   const pct = goal > 0 ? Math.min(100, (saved / goal * 100)) : 0;
@@ -3345,8 +3368,14 @@ function renderSavings() {
   const logSection = document.getElementById('savingsLog');
   if (log.length > 0) {
     logSection.style.display = 'block';
-    document.getElementById('logEntries').innerHTML = log.map(l =>
-      `<div class="log-entry"><span class="log-amount">+$${l.amount.toLocaleString()}</span><span class="log-date">${esc(l.date)}</span></div>`
+    document.getElementById('logEntries').innerHTML = log.map(l => `
+      <div class="log-entry">
+        <span class="log-amount">+$${l.amount.toLocaleString()}</span>
+        <div class="log-entry-right">
+          <span class="log-date">${esc(l.date)}</span>
+          <button class="log-del" onclick="deleteDeposit(${l.id})" title="Remove this deposit">✕</button>
+        </div>
+      </div>`
     ).join('');
   } else {
     logSection.style.display = 'none';
