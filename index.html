@@ -807,9 +807,12 @@
     background: transparent;
     font-family: 'Cormorant Garamond', serif;
     font-size: 1.08rem; line-height: 32px; color: var(--text);
+    overflow-wrap: break-word;
   }
   .nb-textarea.hand { font-family: 'Caveat', cursive; font-size: 1.5rem; }
-  .nb-textarea::placeholder { color: var(--blush); font-style: italic; }
+  .nb-textarea.nb-editor-empty:before {
+    content: attr(data-placeholder); color: var(--blush); font-style: italic; pointer-events: none;
+  }
   .nb-empty {
     display: flex; flex-direction: column; align-items: center;
     justify-content: center; min-height: 560px; padding: 3rem; text-align: center;
@@ -851,6 +854,15 @@
   }
   .nb-paper-dot:hover { transform: scale(1.15); }
   .nb-paper-dot.active { border-color: var(--mocha); }
+  .nb-fmt-group { display: flex; gap: 2px; }
+  .nb-fmt-btn {
+    background: var(--warm-white); border: 1px solid var(--blush); border-radius: 5px;
+    width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 0.78rem; color: var(--mocha);
+    font-family: 'Inter', sans-serif; transition: all 0.15s; padding: 0;
+  }
+  .nb-fmt-btn:hover { background: var(--petal); }
+  .nb-fmt-btn.active { background: var(--mocha); color: #fff; border-color: var(--mocha); }
   .nb-pen-btn {
     background: var(--warm-white); border: 1px solid var(--blush); border-radius: 6px;
     padding: 3px 10px; cursor: pointer; font-size: 0.73rem; color: var(--mocha);
@@ -2112,6 +2124,12 @@
           </div>
           <input class="nb-search" id="nbSearch" type="text" placeholder="Search pages…" oninput="noteSearch(this.value)" />
           <div class="nb-tools">
+            <div class="nb-fmt-group">
+              <button class="nb-fmt-btn" id="nbBtnBold" onmousedown="event.preventDefault()" onclick="nbFormat('bold')" title="Bold"><b>B</b></button>
+              <button class="nb-fmt-btn" id="nbBtnItalic" onmousedown="event.preventDefault()" onclick="nbFormat('italic')" title="Italic"><i>I</i></button>
+              <button class="nb-fmt-btn" id="nbBtnUnderline" onmousedown="event.preventDefault()" onclick="nbFormat('underline')" title="Underline"><u>U</u></button>
+              <button class="nb-fmt-btn" id="nbBtnStrike" onmousedown="event.preventDefault()" onclick="nbFormat('strikeThrough')" title="Strikethrough"><s>S</s></button>
+            </div>
             <button class="nb-pen-btn" onclick="nbInsertList('num')" title="Start a numbered list">1. List</button>
             <button class="nb-pen-btn" onclick="nbInsertList('check')" title="Start a checklist">☐ Checklist</button>
             <div class="nb-paper-dots" id="nbPaperDots"></div>
@@ -2123,9 +2141,9 @@
           <div class="nb-empty" id="nbEmpty">
             <p style="color:var(--blush);font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-style:italic;">No pages yet — hit <strong>+</strong> to start writing</p>
           </div>
-          <textarea class="nb-textarea" id="nbTextarea" placeholder="Write anything…" style="display:none"
-            oninput="onNoteInput(this.value)" onchange="onNoteChange(this.value)"
-            onkeydown="nbKeydown(event)" onclick="nbClick(event)"></textarea>
+          <div class="nb-textarea" id="nbEditor" contenteditable="true" data-placeholder="Write anything…" style="display:none"
+            oninput="onNoteInput(this.innerHTML)" onblur="onNoteChange(this.innerHTML)"
+            onkeydown="nbKeydown(event)" onclick="nbClick(event)" onkeyup="updateNbFormatButtons()" onmouseup="updateNbFormatButtons()"></div>
           <div class="nb-meta" id="nbMeta" style="display:none">
             <span id="nbMetaDate"></span>
             <span id="nbMetaCount"></span>
@@ -3859,16 +3877,45 @@ function growAllClTextareas() {
 }
 
 // ── NOTES ──
+// Page content is stored as HTML (rich text: bold/italic/underline/strike),
+// with each line kept as its own <div> so list/checklist logic can find
+// "the current line" reliably. Chosen once, globally, so Enter always
+// creates a new <div> instead of a <br> or nothing.
+document.execCommand('defaultParagraphSeparator', false, 'div');
+
 const NB_PAPERS = { cream: '#FFFEF9', blush: '#FFF6F3', mint: '#F5FBF3', sky: '#F4F9FD' };
 let nbQuery = '';
 
-function noteLabel(text) {
-  const first = (text || '').trim().split('\n')[0].trim();
+// Plain text extraction from note HTML, preserving line breaks so
+// "first line" / word-count logic behaves the same as it did on plain text.
+function stripHtml(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html || '';
+  tmp.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+  tmp.querySelectorAll('div, p').forEach(el => el.append('\n'));
+  return tmp.textContent || '';
+}
+
+function looksLikeHtml(s) {
+  return /<[a-z][\s\S]*>/i.test(s || '');
+}
+
+// Notes saved before rich text existed store plain text with \n line
+// breaks — wrap each line in its own <div> so it displays and edits the
+// same way today's notes do.
+function migrateNoteText(n) {
+  if (n.text && !looksLikeHtml(n.text)) {
+    n.text = n.text.split('\n').map(l => '<div>' + (l === '' ? '<br>' : esc(l)) + '</div>').join('');
+  }
+}
+
+function noteLabel(html) {
+  const first = stripHtml(html).trim().split('\n')[0].trim();
   return first.length > 0 ? first : 'New page';
 }
 
-function nbWordCount(text) {
-  const m = (text || '').trim().match(/\S+/g);
+function nbWordCount(html) {
+  const m = stripHtml(html).trim().match(/\S+/g);
   return m ? m.length : 0;
 }
 
@@ -3877,30 +3924,32 @@ function nbDate(ts) {
 }
 
 function addNote() {
-  const n = { id: Date.now(), text: '', paper: 'cream', font: 'serif', created: Date.now(), updated: Date.now() };
+  const n = { id: Date.now(), text: '<div><br></div>', paper: 'cream', font: 'serif', created: Date.now(), updated: Date.now() };
   state.notes.push(n);
   activeNoteId = n.id;
   save();
   renderNotes();
-  const ta = document.getElementById('nbTextarea');
-  if (ta) setTimeout(() => ta.focus(), 0);
+  const ed = document.getElementById('nbEditor');
+  if (ed) setTimeout(() => ed.focus(), 0);
 }
 
-function onNoteInput(text) {
+function onNoteInput(html) {
   const n = state.notes.find(n => n.id === activeNoteId);
   if (!n) return;
-  n.text = text;
+  n.text = html;
   n.updated = Date.now();
   saveSoon();
   const activeTab = document.querySelector('.nb-tab.active .nb-tab-label');
-  if (activeTab) activeTab.textContent = noteLabel(text);
+  if (activeTab) activeTab.textContent = noteLabel(html);
+  const ed = document.getElementById('nbEditor');
+  if (ed) ed.classList.toggle('nb-editor-empty', stripHtml(html).trim() === '');
   updateNbMeta(n);
 }
 
-function onNoteChange(text) {
+function onNoteChange(html) {
   const n = state.notes.find(n => n.id === activeNoteId);
   if (!n) return;
-  n.text = text;
+  n.text = html;
   n.updated = Date.now();
   save();
 }
@@ -3951,102 +4000,156 @@ function toggleNoteFont() {
   renderNotes();
 }
 
+// ── Text formatting (bold/italic/underline/strikethrough) ──
+function nbFormat(cmd) {
+  const editor = document.getElementById('nbEditor');
+  if (!editor || editor.style.display === 'none') return;
+  editor.focus();
+  document.execCommand(cmd, false, null);
+  onNoteInput(editor.innerHTML);
+  updateNbFormatButtons();
+}
+
+function updateNbFormatButtons() {
+  const map = { bold: 'nbBtnBold', italic: 'nbBtnItalic', underline: 'nbBtnUnderline', strikeThrough: 'nbBtnStrike' };
+  const editor = document.getElementById('nbEditor');
+  if (!editor || document.activeElement !== editor) return;
+  Object.entries(map).forEach(([cmd, id]) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    let active = false;
+    try { active = document.queryCommandState(cmd); } catch (e) {}
+    btn.classList.toggle('active', active);
+  });
+}
+
 // ── Notebook lists & checkboxes ──
-// Edit the textarea through execCommand so the browser's native undo
-// history (Ctrl+Z / Cmd+Z) keeps working; setRangeText would bypass it.
-function nbEdit(ta, text, selStart, selEnd) {
-  ta.setSelectionRange(selStart, selEnd);
-  let ok = false;
-  try {
-    ok = text === ''
-      ? document.execCommand('delete', false)
-      : document.execCommand('insertText', false, text);
-  } catch (e) { ok = false; }
-  if (!ok) ta.setRangeText(text, selStart, selEnd, 'end');
+// Content is kept as one <div> per line (see defaultParagraphSeparator
+// above). "The current line" is the direct child of the editor that the
+// caret sits inside — walk up from the caret's node until we reach one.
+function nbLineOf(editor, node) {
+  while (node && node.parentNode !== editor) node = node.parentNode;
+  return node === editor ? null : node;
+}
+
+function nbPlaceCaret(node, atStart) {
+  const range = document.createRange();
+  if (atStart) range.setStart(node, 0);
+  else range.selectNodeContents(node);
+  range.collapse(!!atStart);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
+function nbInsertLineAfter(lineDiv, markerText) {
+  const newDiv = document.createElement('div');
+  newDiv.textContent = markerText;
+  lineDiv.after(newDiv);
+  nbPlaceCaret(newDiv, false);
 }
 
 // Find what number a new list should start at, continuing any list that
-// ends right above lineStart.
-function nbNextNumber(val, lineStart) {
-  const prevLines = val.slice(0, lineStart).split('\n');
-  for (let i = prevLines.length - 1; i >= 0; i--) {
-    const m = prevLines[i].match(/^(\d+)\.\s/);
+// ends right above this line.
+function nbNextNumber(fromDiv) {
+  let prev = fromDiv ? fromDiv.previousElementSibling : null;
+  while (prev) {
+    const t = prev.textContent;
+    const m = t.match(/^(\d+)\.\s/);
     if (m) return parseInt(m[1], 10) + 1;
-    if (prevLines[i].trim() !== '') break;
+    if (t.trim() !== '') break;
+    prev = prev.previousElementSibling;
   }
   return 1;
 }
 
 // List/checklist button. With text selected, converts each selected line
-// into a list item; with no selection, inserts a fresh marker at the caret.
+// into a list item (plain-text marker only — rich formatting on those
+// lines is not preserved in this path); with no selection, inserts a
+// fresh marker at the caret's line.
 function nbInsertList(type) {
-  const ta = document.getElementById('nbTextarea');
-  if (!ta || ta.style.display === 'none') return;
-  ta.focus();
-  const start = ta.selectionStart, end = ta.selectionEnd;
-  const val = ta.value;
+  const editor = document.getElementById('nbEditor');
+  if (!editor || editor.style.display === 'none') return;
+  editor.focus();
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
 
-  if (start !== end) {
-    // Expand the selection to whole lines, then prefix each one
-    const lineStart = val.lastIndexOf('\n', start - 1) + 1;
-    let lineEnd = val.indexOf('\n', end);
-    if (lineEnd === -1) lineEnd = val.length;
-    let num = type === 'num' ? nbNextNumber(val, lineStart) : 0;
-    const converted = val.slice(lineStart, lineEnd).split('\n').map(l => {
-      const stripped = l.replace(/^(\d+\.\s+|[☐☑]\s+)/, ''); // don't double-mark
-      if (stripped.trim() === '') return l;
-      return type === 'num' ? (num++) + '. ' + stripped : '☐ ' + stripped;
-    }).join('\n');
-    nbEdit(ta, converted, lineStart, lineEnd);
-    onNoteInput(ta.value);
+  if (!sel.isCollapsed) {
+    const startLine = nbLineOf(editor, range.startContainer);
+    const endLine = nbLineOf(editor, range.endContainer);
+    if (!startLine || !endLine) return;
+    let num = type === 'num' ? nbNextNumber(startLine) : 0;
+    let node = startLine;
+    while (node) {
+      const stripped = node.textContent.replace(/^(\d+\.\s+|[☐☑]\s+)/, '');
+      if (stripped.trim() !== '') {
+        node.textContent = type === 'num' ? (num++) + '. ' + stripped : '☐ ' + stripped;
+      }
+      if (node === endLine) break;
+      node = node.nextElementSibling;
+    }
+    onNoteInput(editor.innerHTML);
     return;
   }
 
-  const lineStart = val.lastIndexOf('\n', start - 1) + 1;
-  const line = val.slice(lineStart, start);
-  const marker = type === 'num' ? nbNextNumber(val, lineStart) + '. ' : '☐ ';
-  nbEdit(ta, (line.trim() === '' ? '' : '\n') + marker, start, end);
-  onNoteInput(ta.value);
+  const lineDiv = nbLineOf(editor, range.startContainer);
+  if (!lineDiv) return;
+  const marker = type === 'num' ? nbNextNumber(lineDiv) + '. ' : '☐ ';
+  if (lineDiv.textContent.trim() === '') {
+    lineDiv.textContent = marker;
+    nbPlaceCaret(lineDiv, false);
+  } else {
+    nbInsertLineAfter(lineDiv, marker);
+  }
+  onNoteInput(editor.innerHTML);
 }
 
 // Enter continues a numbered list or checklist; Enter on an empty item ends it.
 function nbKeydown(e) {
   if (e.key !== 'Enter') return;
-  const ta = e.target;
-  const pos = ta.selectionStart;
-  const val = ta.value;
-  const lineStart = val.lastIndexOf('\n', pos - 1) + 1;
-  const line = val.slice(lineStart, pos);
+  const editor = e.currentTarget;
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return;
+  const lineDiv = nbLineOf(editor, sel.getRangeAt(0).startContainer);
+  if (!lineDiv) return; // not sure which line — let the browser handle Enter normally
+  const lineText = lineDiv.textContent;
   let m;
-  if ((m = line.match(/^(\d+)\.\s?/))) {
+  if ((m = lineText.match(/^(\d+)\.\s?/))) {
     e.preventDefault();
-    if (line.trim() === m[1] + '.') {
-      nbEdit(ta, '', lineStart, pos); // empty item → end the list
+    if (lineText.trim() === m[1] + '.') {
+      lineDiv.innerHTML = '<br>'; // empty item → end the list
+      nbPlaceCaret(lineDiv, true);
     } else {
-      nbEdit(ta, '\n' + (parseInt(m[1], 10) + 1) + '. ', pos, ta.selectionEnd);
+      nbInsertLineAfter(lineDiv, (parseInt(m[1], 10) + 1) + '. ');
     }
-    onNoteInput(ta.value);
-  } else if ((m = line.match(/^([☐☑])\s?/))) {
+    onNoteInput(editor.innerHTML);
+  } else if ((m = lineText.match(/^([☐☑])\s?/))) {
     e.preventDefault();
-    if (line.trim() === m[1]) {
-      nbEdit(ta, '', lineStart, pos); // empty item → end the list
+    if (lineText.trim() === m[1]) {
+      lineDiv.innerHTML = '<br>'; // empty item → end the list
+      nbPlaceCaret(lineDiv, true);
     } else {
-      nbEdit(ta, '\n☐ ', pos, ta.selectionEnd);
+      nbInsertLineAfter(lineDiv, '☐ ');
     }
-    onNoteInput(ta.value);
+    onNoteInput(editor.innerHTML);
   }
 }
 
-// Tapping a ☐ / ☑ at the start of a line toggles it.
+// Tapping a ☐ / ☑ at the very start of a line toggles it.
 function nbClick(e) {
-  const ta = e.target;
-  const pos = ta.selectionStart;
-  const val = ta.value;
-  const lineStart = val.lastIndexOf('\n', pos - 1) + 1;
-  const ch = val.charAt(lineStart);
-  if ((ch === '☐' || ch === '☑') && pos <= lineStart + 1) {
-    nbEdit(ta, ch === '☐' ? '☑' : '☐', lineStart, lineStart + 1);
-    onNoteInput(ta.value);
+  const editor = e.currentTarget;
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  const lineDiv = nbLineOf(editor, range.startContainer);
+  if (!lineDiv) return;
+  const ch = lineDiv.textContent.charAt(0);
+  if ((ch !== '☐' && ch !== '☑') || range.startOffset > 1) return;
+  const firstText = lineDiv.firstChild;
+  if (firstText && firstText.nodeType === Node.TEXT_NODE) {
+    firstText.textContent = (ch === '☐' ? '☑' : '☐') + firstText.textContent.slice(1);
+    onNoteInput(editor.innerHTML);
   }
 }
 
@@ -4085,7 +4188,7 @@ function renderNotes() {
 
   // Tabs — filtered by the search box if a query is set
   const visible = nbQuery
-    ? state.notes.filter(n => (n.text || '').toLowerCase().includes(nbQuery))
+    ? state.notes.filter(n => stripHtml(n.text).toLowerCase().includes(nbQuery))
     : state.notes;
   const tabs = document.getElementById('nbTabs');
   if (tabs) {
@@ -4112,29 +4215,31 @@ function renderNotes() {
 
   const toolbar = document.getElementById('nbToolbar');
   const empty = document.getElementById('nbEmpty');
-  const ta = document.getElementById('nbTextarea');
+  const ed = document.getElementById('nbEditor');
   const meta = document.getElementById('nbMeta');
   const pageEl = document.getElementById('nbPage');
-  if (!ta || !empty) return;
+  if (!ed || !empty) return;
 
   if (activeNoteId === null) {
     if (toolbar) toolbar.style.display = 'none';
     if (meta) meta.style.display = 'none';
     if (pageEl) pageEl.className = 'nb-page';
     empty.style.display = '';
-    ta.style.display = 'none';
+    ed.style.display = 'none';
     return;
   }
 
   const n = state.notes.find(n => n.id === activeNoteId);
+  if (n) migrateNoteText(n);
   empty.style.display = 'none';
-  ta.style.display = '';
-  ta.value = n ? n.text : '';
+  ed.style.display = '';
+  ed.innerHTML = n ? n.text : '';
+  ed.classList.toggle('nb-editor-empty', stripHtml(n ? n.text : '').trim() === '');
 
   // Paper color + pen style
   const paper = n && NB_PAPERS[n.paper] ? n.paper : 'cream';
   if (pageEl) pageEl.className = 'nb-page paper-' + paper;
-  ta.classList.toggle('hand', !!(n && n.font === 'hand'));
+  ed.classList.toggle('hand', !!(n && n.font === 'hand'));
 
   // Toolbar: pager, paper dots, pen button
   if (toolbar) {
