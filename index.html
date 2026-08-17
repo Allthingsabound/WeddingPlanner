@@ -1440,10 +1440,10 @@
 
   /* ── Nav ── */
   nav {
-    background: rgba(253,250,246,0.80);
+    background: color-mix(in srgb, var(--warm-white) 80%, transparent);
     -webkit-backdrop-filter: saturate(1.4) blur(12px);
     backdrop-filter: saturate(1.4) blur(12px);
-    border-bottom: 1px solid rgba(232,213,196,0.7);
+    border-bottom: 1px solid color-mix(in srgb, var(--blush) 70%, transparent);
     height: 64px;
   }
   .nav-brand { font-size: 1.6rem; transition: opacity 0.2s; }
@@ -1452,7 +1452,7 @@
   .nav-tabs::-webkit-scrollbar { display: none; }
   .nav-tabs button { transition: background 0.2s var(--ease), color 0.2s, transform 0.15s var(--ease), box-shadow 0.2s; }
   .nav-tabs button:hover { transform: translateY(-1px); }
-  .nav-tabs button.active { box-shadow: 0 3px 10px rgba(201,169,138,0.40); }
+  .nav-tabs button.active { box-shadow: 0 3px 10px color-mix(in srgb, var(--sand) 40%, transparent); }
 
   /* ── Buttons ── */
   .btn-primary {
