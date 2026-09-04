@@ -327,6 +327,7 @@
   }
 
   .savings-card input:focus { border-color: var(--sand); }
+  .savings-card input:disabled { background: var(--petal); color: var(--mocha); font-weight: 600; cursor: default; }
 
   .savings-log { margin-top: 0.5rem; }
 
@@ -1788,7 +1789,8 @@
     <div class="savings-controls">
       <div class="savings-card">
         <label>Total Goal ($)</label>
-        <input type="number" id="goalInput" placeholder="e.g. 14000" oninput="updateSavings()" />
+        <input type="number" id="goalInput" readonly disabled />
+        <div style="font-size:0.7rem;color:var(--muted);margin-top:0.4rem">Synced automatically from your Budget Breakdown total</div>
       </div>
       <div class="savings-card">
         <label>Add Deposit ($)</label>
@@ -1796,6 +1798,11 @@
           <input type="number" id="depositInput" placeholder="Amount" style="flex:1" />
           <button class="btn-primary" onclick="addDeposit()" style="padding:0.5rem 0.9rem">+</button>
         </div>
+      </div>
+      <div class="savings-card">
+        <label>Monthly Take-Home Income ($)</label>
+        <input type="number" id="incomeInput" placeholder="e.g. 4700" oninput="updateIncome()" />
+        <div style="font-size:0.7rem;color:var(--muted);margin-top:0.4rem">Used to estimate % of income below</div>
       </div>
     </div>
     <div class="savings-card savings-log" id="savingsLog" style="display:none">
@@ -1881,28 +1888,28 @@
     <div class="budget-monthly">
       <div class="budget-monthly-item">
         <div class="lbl">Months to save</div>
-        <div class="val">9 months</div>
-        <div class="sub">Jun 2026 → Mar 2027</div>
+        <div class="val" id="bmMonthsVal">—</div>
+        <div class="sub" id="bmMonthsSub">Set your wedding date</div>
       </div>
       <div class="budget-monthly-item">
         <div class="lbl">Monthly target</div>
-        <div class="val">~$1,556/mo</div>
-        <div class="sub">from $4,700 take-home</div>
+        <div class="val" id="bmTargetVal">—</div>
+        <div class="sub" id="bmTargetSub">Set your wedding date</div>
       </div>
       <div class="budget-monthly-item">
         <div class="lbl">% of income</div>
-        <div class="val">~33%</div>
-        <div class="sub">tight but doable</div>
+        <div class="val" id="bmPctVal">—</div>
+        <div class="sub" id="bmPctSub">Add your monthly income</div>
       </div>
       <div class="budget-monthly-item">
         <div class="lbl">Wedding rings</div>
-        <div class="val">$500–700</div>
-        <div class="sub">plain 14k gold bands × 2</div>
+        <div class="val" id="bmRingsVal">—</div>
+        <div class="sub" id="bmRingsSub">No Rings category yet</div>
       </div>
     </div>
 
-    <div class="budget-tip">
-      💡 <strong>Tip:</strong> Push to September 2027 and you get 15 months — monthly target drops to ~$933. Open a high-yield savings account (Varo, Axos, or Amex — 4–5% APY) and auto-transfer on payday.
+    <div class="budget-tip" id="budgetTip">
+      💡 <strong>Tip:</strong> Open a high-yield savings account (Varo, Axos, or Amex — 4–5% APY) and auto-transfer on payday.
     </div>
   </div>
 
@@ -2569,7 +2576,7 @@ firebase.firestore().enablePersistence({ synchronizeTabs: true }).catch(() => {}
 // ── STATE ──
 let state = {
   vision: [],
-  savings: { goal: 0, saved: 0, log: [] },
+  savings: { goal: 0, saved: 0, income: 0, log: [] },
   vendors: [],
   guests: [],
   tables: [],
@@ -3361,15 +3368,15 @@ function deleteDeposit(id) {
   renderSavings();
 }
 
-function updateSavings() {
-  const goal = parseFloat(document.getElementById('goalInput').value) || 0;
-  state.savings.goal = goal;
+function updateIncome() {
+  const income = parseFloat(document.getElementById('incomeInput').value) || 0;
+  state.savings.income = income;
   save();
-  renderSavings();
+  updateBudgetMonthlyPanel();
 }
 
 function renderSavings() {
-  const { goal, saved, log } = state.savings;
+  const { goal, saved, log, income } = state.savings;
   // Backfill ids for deposits saved before delete existed, so each entry
   // can be targeted individually instead of accidentally matching another.
   let idsAdded = false;
@@ -3382,6 +3389,9 @@ function renderSavings() {
   document.getElementById('progressPct').textContent = pct.toFixed(1) + '% there';
   if (document.getElementById('goalInput')) {
     document.getElementById('goalInput').value = goal || '';
+  }
+  if (document.getElementById('incomeInput')) {
+    document.getElementById('incomeInput').value = income || '';
   }
   const logSection = document.getElementById('savingsLog');
   if (log.length > 0) {
@@ -4286,6 +4296,7 @@ function saveWeddingDate() {
   state.weddingDate = val;
   save();
   startCountdown();
+  updateBudgetMonthlyPanel();
   if (val) toast('Wedding date saved ✓');
 }
 
@@ -4798,6 +4809,130 @@ function buildBudget() {
 
   const totalEl = document.getElementById('budgetGrandTotalAmt');
   if (totalEl) totalEl.textContent = '$' + grandTotal.toLocaleString();
+
+  // The savings goal and the "months to save" panel are both derived from
+  // the budget total, not typed in separately — keep them in sync whenever
+  // the budget actually changes (avoid a write on every render/page-load).
+  if (state.savings.goal !== grandTotal) {
+    state.savings.goal = grandTotal;
+    save();
+  }
+  renderSavings();
+  updateBudgetMonthlyPanel(grandTotal);
+}
+
+// Live-preview the goal/monthly panel from the visible price inputs as you
+// type, without persisting — the blur-triggered buildBudget() above is what
+// actually saves state.savings.goal.
+function previewGoal(total) {
+  const goalEl = document.getElementById('savingsOf');
+  if (!goalEl) return;
+  const saved = state.savings.saved;
+  goalEl.textContent = `of $${total.toLocaleString()} goal`;
+  const pct = total > 0 ? Math.min(100, (saved / total * 100)) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').textContent = pct.toFixed(1) + '% there';
+  const goalInput = document.getElementById('goalInput');
+  if (goalInput) goalInput.value = total || '';
+}
+
+// "Months to save / Monthly target / % of income / Wedding rings" — derived
+// from the wedding date, the budget total, the income field, and whichever
+// budget category looks like the rings line item.
+function updateBudgetMonthlyPanel(total) {
+  if (total === undefined) {
+    total = (state.budget || []).reduce((sum, sec) =>
+      sum + sec.items.reduce((s, it) => s + (Number(it.a) || 0), 0), 0);
+  }
+
+  const monthsEl = document.getElementById('bmMonthsVal');
+  const monthsSubEl = document.getElementById('bmMonthsSub');
+  const targetEl = document.getElementById('bmTargetVal');
+  const targetSubEl = document.getElementById('bmTargetSub');
+  const pctEl = document.getElementById('bmPctVal');
+  const pctSubEl = document.getElementById('bmPctSub');
+  const ringsEl = document.getElementById('bmRingsVal');
+  const ringsSubEl = document.getElementById('bmRingsSub');
+  const tipEl = document.getElementById('budgetTip');
+  if (!monthsEl) return;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let target = null;
+  let months = null; // null = no wedding date set
+
+  if (state.weddingDate) {
+    const parts = state.weddingDate.split('-');
+    target = new Date(parts[0], parts[1] - 1, parts[2]);
+    if (target <= today) {
+      months = 0;
+    } else {
+      let m = (target.getFullYear() - today.getFullYear()) * 12 + (target.getMonth() - today.getMonth());
+      if (target.getDate() < today.getDate()) m -= 1;
+      months = Math.max(0, m);
+    }
+  }
+
+  if (months === null) {
+    monthsEl.textContent = '—';
+    monthsSubEl.textContent = 'Set your wedding date';
+  } else if (target <= today) {
+    monthsEl.textContent = '0 months';
+    monthsSubEl.textContent = 'Your wedding date has passed';
+  } else if (months === 0) {
+    monthsEl.textContent = '< 1 month';
+    monthsSubEl.textContent = 'Now → ' + target.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  } else {
+    monthsEl.textContent = months + (months === 1 ? ' month' : ' months');
+    monthsSubEl.textContent = today.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) +
+      ' → ' + target.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  }
+
+  const monthsForMath = (months !== null && target > today) ? Math.max(1, months) : 0;
+
+  if (monthsForMath > 0) {
+    const monthlyTarget = total / monthsForMath;
+    targetEl.textContent = '~$' + Math.ceil(monthlyTarget).toLocaleString() + '/mo';
+    targetSubEl.textContent = state.savings.income
+      ? 'from $' + state.savings.income.toLocaleString() + ' take-home'
+      : 'add your income below';
+  } else {
+    targetEl.textContent = '—';
+    targetSubEl.textContent = 'Set your wedding date';
+  }
+
+  if (monthsForMath > 0 && state.savings.income > 0) {
+    const monthlyTarget = total / monthsForMath;
+    const pct = (monthlyTarget / state.savings.income) * 100;
+    pctEl.textContent = '~' + pct.toFixed(0) + '%';
+    pctSubEl.textContent = pct < 20 ? 'comfortable' : pct < 35 ? 'tight but doable' : 'very tight — consider adjusting';
+  } else {
+    pctEl.textContent = '—';
+    pctSubEl.textContent = state.savings.income ? 'Set your wedding date' : 'Add your monthly income';
+  }
+
+  const ringSections = (state.budget || []).filter(s => /ring/i.test(s.label));
+  if (ringSections.length) {
+    const ringsTotal = ringSections.reduce((sum, sec) =>
+      sum + sec.items.reduce((s, it) => s + (Number(it.a) || 0), 0), 0);
+    ringsEl.textContent = '$' + ringsTotal.toLocaleString();
+    ringsSubEl.textContent = 'from your Budget Breakdown';
+  } else {
+    ringsEl.textContent = '—';
+    ringsSubEl.textContent = 'No Rings category yet';
+  }
+
+  if (tipEl) {
+    if (monthsForMath > 0 && total > 0) {
+      const laterMonths = monthsForMath + 6;
+      const laterTarget = total / laterMonths;
+      tipEl.innerHTML = '💡 <strong>Tip:</strong> Push your date back 6 months and you get ' + laterMonths +
+        ' months to save — monthly target drops to ~$' + Math.ceil(laterTarget).toLocaleString() +
+        '. Open a high-yield savings account (Varo, Axos, or Amex — 4–5% APY) and auto-transfer on payday.';
+    } else {
+      tipEl.innerHTML = '💡 <strong>Tip:</strong> Open a high-yield savings account (Varo, Axos, or Amex — 4–5% APY) and auto-transfer on payday.';
+    }
+  }
 }
 
 // Recompute totals straight from the visible price inputs as you type,
@@ -4815,6 +4950,8 @@ function liveBudgetTotal() {
   });
   const totalEl = document.getElementById('budgetGrandTotalAmt');
   if (totalEl) totalEl.textContent = '$' + grand.toLocaleString();
+  previewGoal(grand);
+  updateBudgetMonthlyPanel(grand);
 }
 
 function toggleBudgetSec(secId) {
