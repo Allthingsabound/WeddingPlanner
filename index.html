@@ -413,11 +413,41 @@
   .vendor-status-dot.booked { background: var(--success); }
   .vendor-status-dot.pending { background: var(--sand); }
 
-  .vendor-info { flex: 1; }
+  .vendor-info { flex: 1; min-width: 0; }
   .vendor-name { font-weight: 600; font-size: 0.95rem; color: var(--text); }
   .vendor-category { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 0.3rem; }
   .vendor-details { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
   .vendor-price { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--mocha); font-weight: 600; white-space: nowrap; }
+
+  .vendor-edit-input, .vendor-edit-select, .vendor-edit-textarea {
+    width: 100%; background: transparent; border: none; outline: none;
+    font-family: 'Inter', sans-serif; color: var(--text); padding: 2px 4px; border-radius: 4px;
+  }
+  .vendor-edit-input:hover, .vendor-edit-input:focus,
+  .vendor-edit-select:hover, .vendor-edit-select:focus,
+  .vendor-edit-textarea:hover, .vendor-edit-textarea:focus { background: rgba(0,0,0,0.04); box-shadow: 0 0 0 1px var(--sand,#c9a98a); }
+  .vendor-edit-select.category {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted);
+    margin-bottom: 0.2rem; cursor: pointer; width: auto; max-width: 100%;
+  }
+  .vendor-edit-input.name { font-weight: 600; font-size: 0.95rem; color: var(--text); }
+  .vendor-edit-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.3rem; }
+  .vendor-edit-input.small { flex: 1; min-width: 140px; font-size: 0.8rem; color: var(--muted); }
+  .vendor-edit-website { flex: 1; min-width: 140px; display: flex; align-items: center; gap: 2px; }
+  .vendor-edit-website .vendor-edit-input { min-width: 0; }
+  .vendor-open-link { color: var(--sand); text-decoration: none; font-size: 0.85rem; flex-shrink: 0; padding: 0 2px; }
+  .vendor-open-link:hover { color: var(--mocha); }
+  .vendor-edit-textarea {
+    font-size: 0.8rem; color: var(--muted); font-style: italic; resize: vertical; min-height: 36px; margin-top: 0.3rem;
+  }
+  .vendor-edit-select.status {
+    font-size: 0.75rem; margin-top: 0.5rem; cursor: pointer; color: var(--mocha); font-weight: 500;
+    border: 1px solid var(--blush); border-radius: 20px; padding: 3px 10px; width: auto; display: inline-block;
+  }
+  .vendor-edit-input.price {
+    font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: var(--mocha); font-weight: 600;
+    text-align: right; width: 90px; flex-shrink: 0;
+  }
 
   .vendor-delete {
     background: none;
@@ -3560,6 +3590,8 @@ function renderSavings() {
 }
 
 // ── VENDORS ──
+const VENDOR_CATEGORIES = ['Venue','Photographer','Videographer','Catering','Florist','Music / DJ','Hair & Makeup','Officiant','Transportation','Cake / Desserts','Attire','Other'];
+
 function addVendor() {
   const name = document.getElementById('vName').value.trim();
   if (!name) return;
@@ -3580,6 +3612,14 @@ function addVendor() {
   renderVendors();
 }
 
+function updateVendor(id, field, val) {
+  const v = state.vendors.find(v => v.id === id);
+  if (!v) return;
+  v[field] = val;
+  save();
+  renderVendors();
+}
+
 function deleteVendor(id) {
   state.vendors = state.vendors.filter(v => v.id !== id);
   save();
@@ -3596,16 +3636,31 @@ function renderVendors() {
     <div class="vendor-item">
       <div class="vendor-status-dot ${v.status}"></div>
       <div class="vendor-info">
-        <div class="vendor-category">${esc(v.category) || 'Vendor'}</div>
-        <div class="vendor-name">${esc(v.name)}</div>
-        <div class="vendor-details">
-          ${v.contact ? `📞 ${esc(v.contact)}<br>` : ''}
-          ${v.website ? `🔗 <a href="${esc(v.website)}" target="_blank" rel="noopener" style="color:var(--sand)">${esc(v.website.replace(/https?:\/\//, ''))}</a><br>` : ''}
-          ${v.notes ? `<em>${esc(v.notes)}</em>` : ''}
+        <select class="vendor-edit-select category" onchange="updateVendor(${v.id},'category',this.value)">
+          <option value=""${!v.category ? ' selected' : ''}>Category…</option>
+          ${VENDOR_CATEGORIES.map(c => `<option${v.category === c ? ' selected' : ''}>${esc(c)}</option>`).join('')}
+        </select>
+        <input class="vendor-edit-input name" value="${esc(v.name)}" placeholder="Vendor name"
+          onchange="updateVendor(${v.id},'name',this.value)" />
+        <div class="vendor-edit-row">
+          <input class="vendor-edit-input small" placeholder="Contact (name, phone, email)" value="${esc(v.contact || '')}"
+            onchange="updateVendor(${v.id},'contact',this.value)" />
+          <div class="vendor-edit-website">
+            <input class="vendor-edit-input small" placeholder="Website or social link" value="${esc(v.website || '')}"
+              onchange="updateVendor(${v.id},'website',this.value)" />
+            ${v.website ? `<a href="${esc(v.website)}" target="_blank" rel="noopener" class="vendor-open-link" title="Open link">↗</a>` : ''}
+          </div>
         </div>
+        <textarea class="vendor-edit-textarea" placeholder="Notes or reviews…"
+          onchange="updateVendor(${v.id},'notes',this.value)">${esc(v.notes || '')}</textarea>
+        <select class="vendor-edit-select status" onchange="updateVendor(${v.id},'status',this.value)">
+          <option value="pending"${v.status !== 'booked' ? ' selected' : ''}>Pending</option>
+          <option value="booked"${v.status === 'booked' ? ' selected' : ''}>Booked ✓</option>
+        </select>
       </div>
-      ${v.price ? `<div class="vendor-price">$${esc(v.price)}</div>` : ''}
-      <button class="vendor-delete" onclick="deleteVendor(${v.id})">✕</button>
+      <input class="vendor-edit-input price" placeholder="$" value="${esc(v.price || '')}"
+        onchange="updateVendor(${v.id},'price',this.value)" />
+      <button class="vendor-delete" onclick="deleteVendor(${v.id})" title="Remove vendor">✕</button>
     </div>
   `).join('');
 }
