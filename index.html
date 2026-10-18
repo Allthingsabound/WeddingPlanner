@@ -1903,6 +1903,13 @@
       }
       .budget-pay-pct:focus { border-color:var(--sand); }
       .budget-pay-hint { font-size:0.68rem; color:var(--muted,#a08070); white-space:nowrap; }
+      .budget-pay-log-btn {
+        font-size:0.68rem; font-family:'Inter',sans-serif; color:var(--mocha);
+        background:none; border:1px dashed var(--sand); border-radius:20px;
+        padding:2px 8px; cursor:pointer; transition:all 0.15s; white-space:nowrap;
+      }
+      .budget-pay-log-btn:hover { background:var(--petal); border-style:solid; }
+      .budget-pay-logged { font-size:0.68rem; color:var(--success); font-weight:600; white-space:nowrap; cursor:help; }
       .budget-add-line { display:flex; align-items:center; gap:0.5rem; padding:0.6rem 1rem; border-top:1px dashed var(--blush); }
       .budget-add-line .budget-line-input.name { flex:1; }
       .budget-add-line .budget-line-amt-input { width:70px; text-align:left; }
@@ -3459,7 +3466,10 @@ function deleteExpense(id) {
   if (!confirm('Remove the "' + entry.desc + '" expense? This adds its amount back to your money available.')) return;
   state.savings.expenses = state.savings.expenses.filter(e => e.id !== id);
   save();
-  renderSavings();
+  // buildBudget() re-renders the breakdown (so any item whose "Logged as
+  // expense" link just broke reverts to showing the log button again) and
+  // cascades into renderSavings() for the expenses list / money available.
+  buildBudget();
 }
 
 function expenseDateLabel(dateStr) {
@@ -4921,6 +4931,10 @@ function buildBudget() {
           const amt = Number(item.a) || 0;
           const paidAmt = paid === 'full' ? amt : paid === 'partial' ? Math.round(amt * pct / 100) : 0;
           grandPaid += paidAmt;
+          const linkedExpense = item.expenseId ? (state.savings.expenses || []).find(e => e.id === item.expenseId) : null;
+          const logExpenseHtml = paid === 'none' || paidAmt <= 0 ? '' : linkedExpense
+            ? `<span class="budget-pay-logged" title="Already in your Expenses list. Edit the amount there if the payment changes.">✓ Logged as expense</span>`
+            : `<button type="button" class="budget-pay-log-btn" onclick="logBudgetItemAsExpense('${sec.id}','${item.id}')">+ Log as expense</button>`;
           return `
           <div class="budget-line${paid !== 'none' ? ' paid-' + paid : ''}">
             <div class="budget-line-fields">
@@ -4940,6 +4954,7 @@ function buildBudget() {
                     onchange="updateBudgetPaidPct('${sec.id}','${item.id}',this.value)" />%
                 ` : ''}
                 ${paid !== 'none' && amt > 0 ? `<span class="budget-pay-hint">$${paidAmt.toLocaleString()} of $${amt.toLocaleString()} paid</span>` : ''}
+                ${logExpenseHtml}
               </div>
             </div>
             <div class="budget-line-right">
@@ -5195,6 +5210,24 @@ function updateBudgetPaidPct(secId, itemId, val) {
   item.paidPct = Math.min(99, Math.max(1, Number(val) || 50));
   save();
   buildBudget();
+}
+
+// Log a paid (or partially paid) budget item into the Expenses list below,
+// so it counts against "Money available" like any other real expense.
+function logBudgetItemAsExpense(secId, itemId) {
+  const sec = state.budget.find(s => s.id === secId);
+  const item = sec && sec.items.find(it => it.id === itemId);
+  if (!item || !item.paid || item.paid === 'none') return;
+  const amt = Number(item.a) || 0;
+  const paidAmt = item.paid === 'full' ? amt : Math.round(amt * (item.paidPct || 50) / 100);
+  if (paidAmt <= 0) return;
+  if (!state.savings.expenses) state.savings.expenses = [];
+  const expenseId = Date.now();
+  state.savings.expenses.unshift({ id: expenseId, desc: item.n, amount: paidAmt, date: new Date().toISOString().slice(0, 10) });
+  item.expenseId = expenseId;
+  save();
+  buildBudget();
+  toast('Logged $' + paidAmt.toLocaleString() + ' expense for "' + item.n + '"');
 }
 
 function deleteBudgetItem(secId, itemId) {
