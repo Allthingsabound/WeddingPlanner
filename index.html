@@ -298,6 +298,15 @@
 
   .progress-pct { font-size: 0.78rem; color: var(--mocha); font-weight: 600; }
 
+  .savings-available {
+    display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 0.3rem 0.75rem;
+    background: rgba(255,255,255,0.55); border-radius: 10px; padding: 0.7rem 0.9rem; margin-top: 1rem;
+  }
+  .savings-available .label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+  .savings-available .amt { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 600; color: var(--mocha); }
+  .savings-available .amt.negative { color: var(--danger); }
+  .savings-available .sub { width: 100%; font-size: 0.72rem; color: var(--muted); }
+
   .savings-controls {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -343,6 +352,10 @@
 
   .log-entry:last-child { border-bottom: none; }
   .log-amount { font-weight: 600; color: var(--success); }
+  .log-amount.expense { color: var(--danger); }
+  .log-desc { flex: 1; min-width: 0; }
+  .log-desc .log-amount { display: block; }
+  .log-desc .log-expense-name { font-size: 0.78rem; color: var(--text); margin-top: 1px; }
   .log-date { color: var(--muted); font-size: 0.75rem; }
   .log-entry-right { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
   .log-del {
@@ -1785,6 +1798,11 @@
         <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
       </div>
       <div class="progress-pct" id="progressPct">0% there</div>
+      <div class="savings-available" id="savingsAvailable" style="display:none">
+        <span class="label">💵 Money available</span>
+        <span class="amt" id="availableAmt">$0</span>
+        <span class="sub" id="availableSub"></span>
+      </div>
     </div>
     <div class="savings-controls">
       <div class="savings-card">
@@ -1804,10 +1822,23 @@
         <input type="number" id="incomeInput" placeholder="e.g. 4700" oninput="updateIncome()" />
         <div style="font-size:0.7rem;color:var(--muted);margin-top:0.4rem">Used to estimate % of income below</div>
       </div>
+      <div class="savings-card">
+        <label>Add Expense</label>
+        <input type="text" id="expenseDesc" placeholder="What did you pay for?" style="margin-bottom:0.5rem" />
+        <div style="display:flex;gap:0.5rem;align-items:center">
+          <input type="number" id="expenseAmount" placeholder="Amount" style="flex:1.2" />
+          <input type="date" id="expenseDate" style="flex:1" />
+          <button class="btn-primary" onclick="addExpense()" style="padding:0.5rem 0.9rem">+</button>
+        </div>
+      </div>
     </div>
     <div class="savings-card savings-log" id="savingsLog" style="display:none">
       <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:0.75rem">Deposit History</div>
       <div id="logEntries"></div>
+    </div>
+    <div class="savings-card savings-log" id="expensesLog" style="display:none;margin-top:1rem">
+      <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:0.75rem">Expenses</div>
+      <div id="expenseEntries"></div>
     </div>
 
     <!-- BUDGET BREAKDOWN -->
@@ -2612,7 +2643,7 @@ firebase.firestore().enablePersistence({ synchronizeTabs: true }).catch(() => {}
 // ── STATE ──
 let state = {
   vision: [],
-  savings: { goal: 0, saved: 0, income: 0, log: [] },
+  savings: { goal: 0, saved: 0, income: 0, log: [], expenses: [] },
   vendors: [],
   guests: [],
   tables: [],
@@ -3404,6 +3435,42 @@ function deleteDeposit(id) {
   renderSavings();
 }
 
+function addExpense() {
+  const descInput = document.getElementById('expenseDesc');
+  const amtInput = document.getElementById('expenseAmount');
+  const dateInput = document.getElementById('expenseDate');
+  const desc = descInput.value.trim();
+  const amt = parseFloat(amtInput.value);
+  if (!desc || !amt || amt <= 0) return;
+  const dateStr = dateInput.value || new Date().toISOString().slice(0, 10);
+  if (!state.savings.expenses) state.savings.expenses = [];
+  state.savings.expenses.unshift({ id: Date.now(), desc, amount: amt, date: dateStr });
+  descInput.value = '';
+  amtInput.value = '';
+  dateInput.value = '';
+  save();
+  renderSavings();
+  toast('Logged $' + amt.toLocaleString() + ' expense');
+}
+
+function deleteExpense(id) {
+  const entry = state.savings.expenses.find(e => e.id === id);
+  if (!entry) return;
+  if (!confirm('Remove the "' + entry.desc + '" expense? This adds its amount back to your money available.')) return;
+  state.savings.expenses = state.savings.expenses.filter(e => e.id !== id);
+  save();
+  renderSavings();
+}
+
+function expenseDateLabel(dateStr) {
+  // Expense dates are plain YYYY-MM-DD; parse as local time so the
+  // displayed day never shifts by a timezone off-by-one.
+  const parts = (dateStr || '').split('-');
+  if (parts.length !== 3) return dateStr || '';
+  const d = new Date(parts[0], parts[1] - 1, parts[2]);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 function updateIncome() {
   const income = parseFloat(document.getElementById('incomeInput').value) || 0;
   state.savings.income = income;
@@ -3412,11 +3479,13 @@ function updateIncome() {
 }
 
 function renderSavings() {
-  const { goal, saved, log, income } = state.savings;
+  if (!state.savings.expenses) state.savings.expenses = [];
+  const { goal, saved, log, income, expenses } = state.savings;
   // Backfill ids for deposits saved before delete existed, so each entry
   // can be targeted individually instead of accidentally matching another.
   let idsAdded = false;
   log.forEach((l, i) => { if (l.id === undefined) { l.id = Date.now() + i; idsAdded = true; } });
+  expenses.forEach((e, i) => { if (e.id === undefined) { e.id = Date.now() + i; idsAdded = true; } });
   if (idsAdded) save();
   document.getElementById('savedDisplay').textContent = saved.toLocaleString('en-US', {minimumFractionDigits: 0});
   document.getElementById('savingsOf').textContent = `of $${goal.toLocaleString()} goal`;
@@ -3429,6 +3498,21 @@ function renderSavings() {
   if (document.getElementById('incomeInput')) {
     document.getElementById('incomeInput').value = income || '';
   }
+
+  const totalExpenses = expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const available = saved - totalExpenses;
+  const availBox = document.getElementById('savingsAvailable');
+  if (availBox) {
+    availBox.style.display = (saved > 0 || expenses.length > 0) ? 'flex' : 'none';
+    const amtEl = document.getElementById('availableAmt');
+    const subEl = document.getElementById('availableSub');
+    amtEl.textContent = (available < 0 ? '-$' + Math.abs(available).toLocaleString() : '$' + available.toLocaleString());
+    amtEl.classList.toggle('negative', available < 0);
+    subEl.textContent = expenses.length > 0
+      ? '$' + saved.toLocaleString() + ' saved − $' + totalExpenses.toLocaleString() + ' spent'
+      : 'Nothing logged as spent yet';
+  }
+
   const logSection = document.getElementById('savingsLog');
   if (log.length > 0) {
     logSection.style.display = 'block';
@@ -3443,6 +3527,25 @@ function renderSavings() {
     ).join('');
   } else {
     logSection.style.display = 'none';
+  }
+
+  const expensesSection = document.getElementById('expensesLog');
+  if (expenses.length > 0) {
+    expensesSection.style.display = 'block';
+    document.getElementById('expenseEntries').innerHTML = expenses.map(e => `
+      <div class="log-entry">
+        <div class="log-desc">
+          <span class="log-amount expense">-$${e.amount.toLocaleString()}</span>
+          <span class="log-expense-name">${esc(e.desc)}</span>
+        </div>
+        <div class="log-entry-right">
+          <span class="log-date">${esc(expenseDateLabel(e.date))}</span>
+          <button class="log-del" onclick="deleteExpense(${e.id})" title="Remove this expense">✕</button>
+        </div>
+      </div>`
+    ).join('');
+  } else {
+    expensesSection.style.display = 'none';
   }
 }
 
