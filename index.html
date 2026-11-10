@@ -545,6 +545,12 @@
     padding: 2px 6px; cursor: pointer; outline: none;
   }
   .guest-party-select:hover, .guest-party-select:focus { border-color: var(--sand); background: var(--petal); }
+  .guest-edit-input {
+    width: 100%; background: transparent; border: none; outline: none;
+    font-family: 'Inter', sans-serif; font-size: 0.82rem; color: inherit;
+    padding: 2px 4px; border-radius: 4px;
+  }
+  .guest-edit-input:hover, .guest-edit-input:focus { background: var(--petal); box-shadow: 0 0 0 1px var(--sand); }
 
   /* ── TABLE SETUP + VENUE MAP ── */
   .guest-pg-tabs { display:flex; gap:6px; margin-bottom:1.5rem; }
@@ -3717,6 +3723,15 @@ function updateGuestParty(id, val) {
   renderGuests();
 }
 
+function updateGuestName(id, val) {
+  const g = state.guests.find(g => g.id === id);
+  if (!g) return;
+  g.name = val.trim();
+  save();
+  renderGuests();
+  renderVenueMap();
+}
+
 function deleteGuest(id) {
   state.guests = state.guests.filter(g => g.id !== id);
   save();
@@ -3741,7 +3756,10 @@ function renderGuests() {
   const body = document.getElementById('guestBody');
   body.innerHTML = state.guests.map(g => `
     <tr>
-      <td style="font-weight:500">${esc(g.name)}</td>
+      <td style="font-weight:500">
+        <input class="guest-edit-input" value="${esc(g.name)}" placeholder="Guest name"
+          onchange="updateGuestName(${g.id}, this.value)" />
+      </td>
       <td style="color:var(--muted)">${esc(g.contact) || '—'}</td>
       <td><span class="rsvp-badge rsvp-${g.rsvp}">${g.rsvp === 'yes' ? 'Coming' : g.rsvp === 'no' ? 'Declined' : 'Pending'}</span></td>
       <td style="color:var(--muted)">${esc(g.table) || '—'}</td>
