@@ -539,6 +539,13 @@
   .rsvp-no { background: #FAE8E5; color: var(--danger); }
   .rsvp-pending { background: var(--petal); color: var(--muted); }
 
+  .guest-party-select {
+    font-family: 'Inter', sans-serif; font-size: 0.78rem; color: var(--text);
+    background: transparent; border: 1px solid var(--blush); border-radius: 6px;
+    padding: 2px 6px; cursor: pointer; outline: none;
+  }
+  .guest-party-select:hover, .guest-party-select:focus { border-color: var(--sand); background: var(--petal); }
+
   /* ── TABLE SETUP + VENUE MAP ── */
   .guest-pg-tabs { display:flex; gap:6px; margin-bottom:1.5rem; }
   .guest-pg-tab {
@@ -2083,9 +2090,12 @@
           <option value="yes">Yes ✓</option>
           <option value="no">No ✗</option>
         </select>
-        <select id="gPlus">
-          <option value="no">No plus one</option>
-          <option value="yes">Has plus one</option>
+        <select id="gParty">
+          <option value="1">Just them (party of 1)</option>
+          <option value="2">+1 (party of 2)</option>
+          <option value="3">+2 (party of 3)</option>
+          <option value="4">+3 (party of 4)</option>
+          <option value="5">+4 (party of 5)</option>
         </select>
         <select id="gTable">
           <option value="">No table assigned</option>
@@ -2101,7 +2111,7 @@
             <th>RSVP</th>
             <th>Table</th>
             <th>Seat</th>
-            <th>+1</th>
+            <th>Party</th>
             <th></th>
           </tr>
         </thead>
@@ -3686,17 +3696,25 @@ function addGuest() {
     name,
     contact: document.getElementById('gContact').value.trim(),
     rsvp: document.getElementById('gRsvp').value,
-    plusOne: document.getElementById('gPlus').value,
+    party: Math.min(5, Math.max(1, parseInt(document.getElementById('gParty').value) || 1)),
     table: document.getElementById('gTable').value,
     chair: document.getElementById('gChair').value.trim()
   });
   ['gName','gContact','gChair'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('gRsvp').value = 'pending';
   document.getElementById('gTable').value = '';
-  document.getElementById('gPlus').value = 'no';
+  document.getElementById('gParty').value = '1';
   save();
   renderGuests();
   renderVenueMap();
+}
+
+function updateGuestParty(id, val) {
+  const g = state.guests.find(g => g.id === id);
+  if (!g) return;
+  g.party = Math.min(5, Math.max(1, parseInt(val) || 1));
+  save();
+  renderGuests();
 }
 
 function deleteGuest(id) {
@@ -3708,10 +3726,17 @@ function deleteGuest(id) {
 }
 
 function renderGuests() {
+  // Guests saved before the 1-5 party size existed only have the old
+  // yes/no plusOne field — migrate those to an equivalent party size.
+  state.guests.forEach(g => {
+    if (g.party === undefined) {
+      g.party = g.plusOne === 'yes' ? 2 : 1;
+    }
+  });
   document.getElementById('totalGuests').textContent = state.guests.length;
   document.getElementById('rsvpYes').textContent = state.guests.filter(g => g.rsvp === 'yes').length;
   document.getElementById('rsvpNo').textContent = state.guests.filter(g => g.rsvp === 'no').length;
-  document.getElementById('plusOnes').textContent = state.guests.filter(g => g.plusOne === 'yes').length;
+  document.getElementById('plusOnes').textContent = state.guests.reduce((sum, g) => sum + Math.max(0, (g.party || 1) - 1), 0);
 
   const body = document.getElementById('guestBody');
   body.innerHTML = state.guests.map(g => `
@@ -3721,7 +3746,11 @@ function renderGuests() {
       <td><span class="rsvp-badge rsvp-${g.rsvp}">${g.rsvp === 'yes' ? 'Coming' : g.rsvp === 'no' ? 'Declined' : 'Pending'}</span></td>
       <td style="color:var(--muted)">${esc(g.table) || '—'}</td>
       <td style="color:var(--muted)">${esc(g.chair) || '—'}</td>
-      <td>${g.plusOne === 'yes' ? '✓' : '—'}</td>
+      <td>
+        <select class="guest-party-select" onchange="updateGuestParty(${g.id}, this.value)">
+          ${[1,2,3,4,5].map(n => `<option value="${n}"${(g.party || 1) === n ? ' selected' : ''}>${n}</option>`).join('')}
+        </select>
+      </td>
       <td><button class="vendor-delete" onclick="deleteGuest(${g.id})">✕</button></td>
     </tr>
   `).join('');
