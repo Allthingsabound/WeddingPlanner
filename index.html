@@ -480,6 +480,7 @@
   }
 
   .guest-stat-num { font-family: 'Cormorant Garamond', serif; font-size: 2rem; color: var(--mocha); line-height: 1; }
+  .guest-stat-total { background: var(--petal); border-color: var(--sand); }
   .guest-stat-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-top: 0.2rem; }
 
   .guest-add-form {
@@ -2079,6 +2080,7 @@
       <div class="guest-stat"><div class="guest-stat-num" id="rsvpYes">0</div><div class="guest-stat-label">Coming</div></div>
       <div class="guest-stat"><div class="guest-stat-num" id="rsvpNo">0</div><div class="guest-stat-label">Declined</div></div>
       <div class="guest-stat"><div class="guest-stat-num" id="plusOnes">0</div><div class="guest-stat-label">Plus Ones</div></div>
+      <div class="guest-stat guest-stat-total"><div class="guest-stat-num" id="totalPeople">0</div><div class="guest-stat-label">Total People</div></div>
     </div>
 
     <div class="guest-pg-tabs">
@@ -3747,7 +3749,9 @@ function renderGuests() {
   document.getElementById('rsvpNo').textContent = state.guests.filter(g => g.rsvp === 'no').length;
   // Guests saved before the count existed only have plusOne: 'yes'/'no'.
   state.guests.forEach(g => { if (g.plus === undefined) g.plus = g.plusOne === 'yes' ? 1 : 0; });
-  document.getElementById('plusOnes').textContent = state.guests.reduce((sum, g) => sum + (g.plus || 0), 0);
+  const plusTotal = state.guests.reduce((sum, g) => sum + (g.plus || 0), 0);
+  document.getElementById('plusOnes').textContent = plusTotal;
+  document.getElementById('totalPeople').textContent = state.guests.length + plusTotal;
 
   const body = document.getElementById('guestBody');
   body.innerHTML = state.guests.map(g => `
