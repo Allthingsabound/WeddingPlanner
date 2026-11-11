@@ -566,6 +566,18 @@
   .guest-chip .n { opacity: 0.7; margin-left: 4px; }
   .guest-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .guest-table-wrap table { min-width: 720px; }
+  .guest-paste {
+    background: var(--petal); border-radius: 12px; padding: 0.8rem 1.25rem; margin: -1rem 0 1.5rem;
+  }
+  .guest-paste summary { cursor: pointer; font-size: 0.82rem; font-weight: 500; color: var(--mocha); }
+  .guest-paste[open] summary { margin-bottom: 0.6rem; }
+  .guest-paste-hint { font-size: 0.75rem; color: var(--muted); line-height: 1.5; margin-bottom: 0.6rem; }
+  .guest-paste textarea {
+    width: 100%; padding: 0.6rem 0.9rem; border: 1px solid var(--blush); border-radius: 8px;
+    font-family: 'Inter', sans-serif; font-size: 0.82rem; background: white; color: var(--text);
+    outline: none; resize: vertical; margin-bottom: 0.6rem;
+  }
+  .guest-paste textarea:focus { border-color: var(--sand); }
   .guest-empty-row td { text-align: center; color: var(--muted); font-style: italic; padding: 1.5rem; }
   .guest-edit-input {
     width: 100%; background: transparent; border: none; outline: none;
@@ -2121,6 +2133,7 @@
           <option>Bride's Friend</option>
           <option>Groom's Friend</option>
           <option>Wedding Party</option>
+          <option>Service</option>
         </select>
         <label class="guest-invited-check"><input type="checkbox" id="gInvited" checked /> Invited</label>
         <select id="gRsvp">
@@ -2142,6 +2155,13 @@
         <input type="text" id="gChair" placeholder="Seat #" />
         <button class="btn-primary" onclick="addGuest()" style="grid-column:1/-1">Add Person</button>
       </div>
+      <details class="guest-paste">
+        <summary>Paste a list</summary>
+        <p class="guest-paste-hint">One person per line. Numbers are fine. Write <b>Name: role</b> for the wedding party (e.g. <i>Raimar: maid of honor</i>).
+          A line that's just a tag name (e.g. <i>Service</i> or <i>Bride's Family</i>) puts everyone below it under that tag. Everyone else is added as Guest.</p>
+        <textarea id="guestPasteText" rows="8" placeholder="1. Saoris&#10;2. Raimar: maid of honor&#10;&#10;Service&#10;1. Jonathan"></textarea>
+        <button class="btn-primary" onclick="addPastedGuests()">Add everyone</button>
+      </details>
       <div class="guest-filter" id="guestFilter"></div>
       <div class="guest-table-wrap">
       <table id="guestTable">
@@ -3732,7 +3752,8 @@ function switchGuestTab(tab) {
   if (tab === 'map') renderVenueMap();
 }
 
-const GUEST_TAGS = ['Guest', "Bride's Family", "Groom's Family", "Bride's Friend", "Groom's Friend", 'Wedding Party'];
+const GUEST_TAGS = ['Guest', "Bride's Family", "Groom's Family", "Bride's Friend", "Groom's Friend", 'Wedding Party', 'Service'];
+const NOT_INVITED_TAGS = ['Service']; // on the list, but not part of the guest headcount
 let guestFilter = 'all'; // 'all', 'not-invited', or one of GUEST_TAGS
 
 function isInvited(g) { return g.invited !== false; }
@@ -3769,6 +3790,91 @@ function updateGuestName(id, val) {
   save();
   renderGuests();
   renderVenueMap();
+}
+
+function titleCase(str) {
+  const small = ['of', 'the', 'and', 'a', 'de', 'del', 'la'];
+  return str.trim().replace(/\s+/g, ' ').split(' ').map((w, i) =>
+    i > 0 && small.includes(w.toLowerCase()) ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1)
+  ).join(' ');
+}
+
+function baseName(name) {
+  return (name || '').replace(/\s*\(.*\)\s*$/, '').trim().toLowerCase();
+}
+
+// Turn pasted text into people: strips list numbering/bullets, reads
+// "Name: role" for the wedding party, and treats a line that is just a
+// tag name (e.g. "Service") as a heading for the lines below it.
+function parseGuestPaste(text) {
+  const tagByKey = {};
+  GUEST_TAGS.forEach(t => {
+    const k = t.toLowerCase().replace(/[’']/g, "'");
+    tagByKey[k] = t;
+    tagByKey[k + 's'] = t;
+  });
+  let section = 'Guest';
+  const people = [];
+  const tagNames = Object.keys(tagByKey).sort((a, b) => b.length - a.length);
+  const lines = [];
+  text.split(/\r?\n/).forEach(raw => {
+    // A list typed on one line ("1. Ana 2. Luis") is split at each number
+    raw.split(/\s+(?=\d+[.)]\s)/).forEach(chunk => {
+      // "14. Wilkin Service" — a tag name tacked on the end starts a new section
+      const lower = chunk.trim().toLowerCase().replace(/[’']/g, "'");
+      const tail = tagNames.find(k => lower.endsWith(' ' + k) || lower.endsWith(' ' + k + ':'));
+      if (tail && /^\d+[.)]\s/.test(chunk.trim())) {
+        const cut = chunk.trim().length - (lower.endsWith(':') ? tail.length + 1 : tail.length);
+        lines.push(chunk.trim().slice(0, cut), tail);
+      } else {
+        lines.push(chunk);
+      }
+    });
+  });
+  lines.forEach(raw => {
+    const line = raw.trim();
+    if (!line) return;
+    const heading = line.replace(/[:\s]+$/, '').toLowerCase().replace(/[’']/g, "'");
+    if (tagByKey[heading]) { section = tagByKey[heading]; return; }
+    const body = line.replace(/^(\d+[.)]|[-*•])\s*/, '').trim();
+    if (!body) return;
+    const colon = body.indexOf(':');
+    const name = titleCase(colon >= 0 ? body.slice(0, colon) : body);
+    const role = colon >= 0 ? titleCase(body.slice(colon + 1)) : '';
+    if (!name) return;
+    const tag = role && section === 'Guest' ? 'Wedding Party' : section;
+    people.push({ name: role ? `${name} (${role})` : name, tag });
+  });
+  return people;
+}
+
+function addPastedGuests() {
+  const box = document.getElementById('guestPasteText');
+  const people = parseGuestPaste(box.value);
+  if (!people.length) { toast('Nothing to add — paste one name per line'); return; }
+  const existing = new Set(state.guests.map(g => baseName(g.name)));
+  const fresh = [], skipped = [];
+  people.forEach(p => {
+    const key = baseName(p.name);
+    if (existing.has(key)) skipped.push(p.name); else { existing.add(key); fresh.push(p); }
+  });
+  if (!fresh.length) { toast('Everyone in that list is already on your master list'); return; }
+  const byTag = {};
+  fresh.forEach(p => { byTag[p.tag] = (byTag[p.tag] || 0) + 1; });
+  const summary = Object.entries(byTag).map(([t, n]) => `${t}: ${n}`).join('\n');
+  const skipNote = skipped.length ? `\n\nAlready on your list (skipped): ${skipped.join(', ')}` : '';
+  if (!confirm(`Add ${fresh.length} ${fresh.length === 1 ? 'person' : 'people'}?\n\n${summary}${skipNote}`)) return;
+  const now = Date.now();
+  fresh.forEach((p, i) => state.guests.push({
+    id: now + i, name: p.name, tag: p.tag, invited: !NOT_INVITED_TAGS.includes(p.tag),
+    contact: '', rsvp: 'pending', plus: 0, table: '', chair: ''
+  }));
+  box.value = '';
+  box.closest('details').open = false;
+  save();
+  renderGuests();
+  renderVenueMap();
+  toast(`Added ${fresh.length} ${fresh.length === 1 ? 'person' : 'people'}` + (skipped.length ? ` · ${skipped.length} already on list` : ''));
 }
 
 function updateGuestTag(id, val) {
