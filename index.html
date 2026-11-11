@@ -2274,7 +2274,7 @@
             <p style="color:var(--blush);font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-style:italic;">No pages yet — hit <strong>+</strong> to start writing</p>
           </div>
           <div class="nb-textarea" id="nbEditor" contenteditable="true" data-placeholder="Write anything…" style="display:none"
-            oninput="onNoteInput(this.innerHTML)" onblur="onNoteChange(this.innerHTML)"
+            oninput="nbOnInput(event)" onblur="onNoteChange(this.innerHTML)"
             onkeydown="nbKeydown(event)" onclick="nbClick(event)" onkeyup="updateNbFormatButtons()" onmouseup="updateNbFormatButtons()"></div>
           <div class="nb-meta" id="nbMeta" style="display:none">
             <span id="nbMetaDate"></span>
@@ -4376,6 +4376,15 @@ function nbRenumber(editor) {
     // replaceData (not assigning .data) keeps the caret where it was
     if (digits) first.replaceData(0, digits[0].length, String(n));
   });
+}
+
+// Any typing/deleting (Backspace removing an item, pasting, etc.) can
+// leave gaps in a numbered list, so renumber on every edit. Skip while an
+// IME composition is in progress — touching the DOM then breaks input.
+function nbOnInput(e) {
+  const editor = e.currentTarget;
+  if (!e.isComposing) nbRenumber(editor);
+  onNoteInput(editor.innerHTML);
 }
 
 // List/checklist button. Acts on the line(s) the caret or selection is on:
