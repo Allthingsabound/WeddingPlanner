@@ -4300,6 +4300,21 @@ function nbLineOf(editor, node) {
   return node === editor ? null : node;
 }
 
+// Like nbLineOf, but also handles a caret sitting directly on the editor
+// (between lines) and an editor emptied of all lines.
+function nbCaretLine(editor, range) {
+  if (range.startContainer === editor) {
+    const kids = editor.children;
+    const line = kids[range.startOffset] || kids[range.startOffset - 1];
+    if (line) return line;
+    const div = document.createElement('div');
+    div.innerHTML = '<br>';
+    editor.appendChild(div);
+    return div;
+  }
+  return nbLineOf(editor, range.startContainer);
+}
+
 function nbPlaceCaret(node, atStart) {
   const range = document.createRange();
   if (atStart) range.setStart(node, 0);
@@ -4310,31 +4325,62 @@ function nbPlaceCaret(node, atStart) {
   sel.addRange(range);
 }
 
-function nbInsertLineAfter(lineDiv, markerText) {
-  const newDiv = document.createElement('div');
-  newDiv.textContent = markerText;
-  lineDiv.after(newDiv);
-  nbPlaceCaret(newDiv, false);
+const NB_NUM_RE = /^(\d+)\.\s?/;
+const NB_CHECK_RE = /^[☐☑]\s?/;
+
+function nbLineType(line) {
+  const t = line.textContent;
+  if (NB_NUM_RE.test(t)) return 'num';
+  if (NB_CHECK_RE.test(t)) return 'check';
+  return null;
 }
 
-// Find what number a new list should start at, continuing any list that
-// ends right above this line.
-function nbNextNumber(fromDiv) {
-  let prev = fromDiv ? fromDiv.previousElementSibling : null;
-  while (prev) {
-    const t = prev.textContent;
-    const m = t.match(/^(\d+)\.\s/);
-    if (m) return parseInt(m[1], 10) + 1;
-    if (t.trim() !== '') break;
-    prev = prev.previousElementSibling;
+// Remove the leading "1. " / "☐ " marker without touching the rest of the
+// line's formatting.
+function nbStripMarker(line) {
+  const t = line.textContent;
+  const m = t.match(NB_NUM_RE) || t.match(NB_CHECK_RE);
+  if (!m) return;
+  const first = line.firstChild;
+  if (first && first.nodeType === Node.TEXT_NODE && first.data.length >= m[0].length) {
+    first.data = first.data.slice(m[0].length);
+    if (!first.data) first.remove();
+  } else {
+    line.textContent = t.slice(m[0].length);
   }
-  return 1;
+  if (!line.textContent) line.innerHTML = '<br>';
 }
 
-// List/checklist button. With text selected, converts each selected line
-// into a list item (plain-text marker only — rich formatting on those
-// lines is not preserved in this path); with no selection, inserts a
-// fresh marker at the caret's line.
+function nbPrependMarker(line, marker) {
+  if (!line.textContent) { line.textContent = marker; return; }
+  const first = line.firstChild;
+  if (first && first.nodeType === Node.TEXT_NODE) first.data = marker + first.data;
+  else line.insertBefore(document.createTextNode(marker), first);
+}
+
+function nbMarker(type) {
+  return type === 'num' ? '1. ' : '☐ ';
+}
+
+// Number every run of consecutive numbered lines 1, 2, 3… so inserting,
+// removing or toggling an item never leaves duplicates or gaps.
+function nbRenumber(editor) {
+  let n = 0;
+  Array.from(editor.children).forEach(line => {
+    const m = line.textContent.match(NB_NUM_RE);
+    if (!m) { n = 0; return; }
+    n += 1;
+    if (parseInt(m[1], 10) === n) return;
+    const first = line.firstChild;
+    const digits = first && first.nodeType === Node.TEXT_NODE && first.data.match(/^\d+/);
+    // replaceData (not assigning .data) keeps the caret where it was
+    if (digits) first.replaceData(0, digits[0].length, String(n));
+  });
+}
+
+// List/checklist button. Acts on the line(s) the caret or selection is on:
+// turns them into that kind of list item, or — if they already are —
+// turns the list off again. Never adds new lines.
 function nbInsertList(type) {
   const editor = document.getElementById('nbEditor');
   if (!editor || editor.style.display === 'none') return;
@@ -4343,65 +4389,66 @@ function nbInsertList(type) {
   if (!sel.rangeCount) return;
   const range = sel.getRangeAt(0);
 
-  if (!sel.isCollapsed) {
-    const startLine = nbLineOf(editor, range.startContainer);
-    const endLine = nbLineOf(editor, range.endContainer);
-    if (!startLine || !endLine) return;
-    let num = type === 'num' ? nbNextNumber(startLine) : 0;
-    let node = startLine;
-    while (node) {
-      const stripped = node.textContent.replace(/^(\d+\.\s+|[☐☑]\s+)/, '');
-      if (stripped.trim() !== '') {
-        node.textContent = type === 'num' ? (num++) + '. ' + stripped : '☐ ' + stripped;
-      }
-      if (node === endLine) break;
-      node = node.nextElementSibling;
-    }
-    onNoteInput(editor.innerHTML);
-    return;
-  }
+  const startLine = nbCaretLine(editor, range);
+  const endLine = sel.isCollapsed ? startLine : (nbLineOf(editor, range.endContainer) || startLine);
+  if (!startLine) return;
 
-  const lineDiv = nbLineOf(editor, range.startContainer);
-  if (!lineDiv) return;
-  const marker = type === 'num' ? nbNextNumber(lineDiv) + '. ' : '☐ ';
-  if (lineDiv.textContent.trim() === '') {
-    lineDiv.textContent = marker;
-    nbPlaceCaret(lineDiv, false);
-  } else {
-    nbInsertLineAfter(lineDiv, marker);
+  const lines = [];
+  for (let node = startLine; node; node = node.nextElementSibling) {
+    lines.push(node);
+    if (node === endLine) break;
   }
+  // With a multi-line selection, skip blank lines; a single line is always acted on.
+  const targets = lines.length > 1 ? lines.filter(l => l.textContent.trim() !== '') : lines;
+  const turnOff = targets.length > 0 && targets.every(l => nbLineType(l) === type);
+
+  targets.forEach(line => {
+    nbStripMarker(line);
+    if (!turnOff) nbPrependMarker(line, nbMarker(type));
+  });
+  nbRenumber(editor);
+  if (sel.isCollapsed) nbPlaceCaret(startLine, false);
   onNoteInput(editor.innerHTML);
 }
 
-// Enter continues a numbered list or checklist; Enter on an empty item ends it.
+// Enter continues a numbered list or checklist (splitting the line at the
+// caret); Enter on an empty item ends the list.
 function nbKeydown(e) {
-  if (e.key !== 'Enter') return;
+  if (e.key !== 'Enter' || e.shiftKey) return;
   const editor = e.currentTarget;
   const sel = window.getSelection();
   if (!sel.rangeCount) return;
-  const lineDiv = nbLineOf(editor, sel.getRangeAt(0).startContainer);
+  const range = sel.getRangeAt(0);
+  const lineDiv = nbLineOf(editor, range.startContainer);
   if (!lineDiv) return; // not sure which line — let the browser handle Enter normally
-  const lineText = lineDiv.textContent;
-  let m;
-  if ((m = lineText.match(/^(\d+)\.\s?/))) {
-    e.preventDefault();
-    if (lineText.trim() === m[1] + '.') {
-      lineDiv.innerHTML = '<br>'; // empty item → end the list
-      nbPlaceCaret(lineDiv, true);
-    } else {
-      nbInsertLineAfter(lineDiv, (parseInt(m[1], 10) + 1) + '. ');
-    }
-    onNoteInput(editor.innerHTML);
-  } else if ((m = lineText.match(/^([☐☑])\s?/))) {
-    e.preventDefault();
-    if (lineText.trim() === m[1]) {
-      lineDiv.innerHTML = '<br>'; // empty item → end the list
-      nbPlaceCaret(lineDiv, true);
-    } else {
-      nbInsertLineAfter(lineDiv, '☐ ');
-    }
-    onNoteInput(editor.innerHTML);
+  const type = nbLineType(lineDiv);
+  if (!type) return;
+  e.preventDefault();
+
+  const markerOnly = lineDiv.textContent.match(type === 'num' ? NB_NUM_RE : NB_CHECK_RE)[0];
+  if (lineDiv.textContent.trim() === markerOnly.trim()) {
+    lineDiv.innerHTML = '<br>'; // empty item → end the list
+    nbPlaceCaret(lineDiv, true);
+  } else {
+    if (!range.collapsed) range.deleteContents();
+    const tail = document.createRange();
+    tail.setStart(range.startContainer, range.startOffset);
+    tail.setEnd(lineDiv, lineDiv.childNodes.length);
+    const rest = tail.extractContents();
+    if (!lineDiv.textContent) lineDiv.innerHTML = '<br>';
+    const newDiv = document.createElement('div');
+    const markerNode = document.createTextNode(nbMarker(type));
+    newDiv.appendChild(markerNode);
+    newDiv.appendChild(rest);
+    lineDiv.after(newDiv);
+    const caret = document.createRange();
+    caret.setStart(markerNode, markerNode.data.length);
+    caret.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(caret);
   }
+  nbRenumber(editor);
+  onNoteInput(editor.innerHTML);
 }
 
 // Tapping a ☐ / ☑ at the very start of a line toggles it.
