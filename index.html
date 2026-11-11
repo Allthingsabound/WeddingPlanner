@@ -4362,13 +4362,18 @@ function nbMarker(type) {
   return type === 'num' ? '1. ' : '☐ ';
 }
 
-// Number every run of consecutive numbered lines 1, 2, 3… so inserting,
+// Number every run of numbered lines 1, 2, 3… so inserting,
 // removing or toggling an item never leaves duplicates or gaps.
 function nbRenumber(editor) {
   let n = 0;
   Array.from(editor.children).forEach(line => {
     const m = line.textContent.match(NB_NUM_RE);
-    if (!m) { n = 0; return; }
+    if (!m) {
+      // A blank line (e.g. an item whose text was deleted) doesn't end the
+      // list; only a line with real text does.
+      if (line.textContent.trim() !== '') n = 0;
+      return;
+    }
     n += 1;
     if (parseInt(m[1], 10) === n) return;
     const first = line.firstChild;
