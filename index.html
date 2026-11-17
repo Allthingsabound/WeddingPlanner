@@ -2093,6 +2093,9 @@
         <input type="text" id="gChair" placeholder="Seat #" />
         <button class="btn-primary" onclick="addGuest()" style="grid-column:1/-1">Add Guest</button>
       </div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem">
+        <button class="btn-secondary" onclick="exportGuestsCSV()" style="font-size:0.8rem;padding:0.4rem 0.9rem">⬇ Export CSV</button>
+      </div>
       <table id="guestTable">
         <thead>
           <tr>
@@ -3705,6 +3708,23 @@ function deleteGuest(id) {
   renderGuests();
   renderVenueMap();
   if (selectedTableId) renderSeatPanel();
+}
+
+function exportGuestsCSV() {
+  if (!state.guests.length) { toast('No guests to export'); return; }
+  const rows = [['Name','Contact','RSVP','Plus One','Table','Seat']];
+  state.guests.forEach(g => rows.push([
+    g.name, g.contact || '',
+    g.rsvp === 'yes' ? 'Coming' : g.rsvp === 'no' ? 'Declined' : 'Pending',
+    g.plusOne === 'yes' ? 'Yes' : 'No',
+    g.table || '', g.chair || ''
+  ]));
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = 'guest-list.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 function renderGuests() {
