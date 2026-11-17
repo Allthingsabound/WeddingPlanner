@@ -2164,7 +2164,7 @@
       </details>
       <div class="guest-filter" id="guestFilter"></div>
       <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem">
-        <button class="btn-secondary" onclick="exportGuestsCSV()" style="font-size:0.8rem;padding:0.4rem 0.9rem">⬇ Export CSV</button>
+        <button class="btn-secondary" onclick="exportGuestsXLSX()" style="font-size:0.8rem;padding:0.4rem 0.9rem">⬇ Export Spreadsheet</button>
       </div>
       <div class="guest-table-wrap">
       <table id="guestTable">
@@ -3921,8 +3921,20 @@ function deleteGuest(id) {
   if (selectedTableId) renderSeatPanel();
 }
 
-function exportGuestsCSV() {
+function loadXLSX() {
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function exportGuestsXLSX() {
   if (!state.guests.length) { toast('No guests to export'); return; }
+  try { await loadXLSX(); } catch { toast('Could not load the spreadsheet tool — check your connection'); return; }
   const splitName = full => {
     const parts = full.trim().split(/\s+/);
     return parts.length === 1
@@ -3937,17 +3949,17 @@ function exportGuestsCSV() {
       ? ['', g.contact || ''] : [g.contact || '', ''];
     const group = g.name;
     rows.push([first, last, email, phone, group, rsvpLabel(g.rsvp), g.table || '', g.chair || '']);
-    const plusCount = parseInt(g.plus, 10) || 0;
+    const plusCount = g.plus !== undefined ? (parseInt(g.plus, 10) || 0) : (g.plusOne === 'yes' ? 1 : 0);
     for (let i = 0; i < plusCount; i++) {
-      rows.push(['Guest', `of ${g.name}`, '', '', group, 'Awaiting Reply', '', '']);
+      // Numbered so Zola doesn't merge a guest's identical-looking plus ones.
+      rows.push(['Unknown', plusCount > 1 ? `Guest ${i + 1}` : 'Guest', '', '', group, rsvpLabel(g.rsvp), g.table || '', '']);
     }
   });
-  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
-  a.download = 'guest-list.csv';
-  a.click();
-  URL.revokeObjectURL(a.href);
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [14, 14, 26, 16, 24, 14, 12, 8].map(wch => ({ wch }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Guests');
+  XLSX.writeFile(wb, 'guest-list.xlsx');
 }
 
 function renderGuests() {
