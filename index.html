@@ -3923,14 +3923,25 @@ function deleteGuest(id) {
 
 function exportGuestsCSV() {
   if (!state.guests.length) { toast('No guests to export'); return; }
-  const rows = [['Name','Tag','Invited','Contact','RSVP','Plus One','Table','Seat']];
-  state.guests.forEach(g => rows.push([
-    g.name, g.tag || '', g.invited !== false ? 'Yes' : 'No',
-    g.contact || '',
-    g.rsvp === 'yes' ? 'Coming' : g.rsvp === 'no' ? 'Declined' : 'Pending',
-    g.plusOne === 'yes' ? 'Yes' : 'No',
-    g.table || '', g.chair || ''
-  ]));
+  const splitName = full => {
+    const parts = full.trim().split(/\s+/);
+    return parts.length === 1
+      ? [parts[0], '']
+      : [parts.slice(0, -1).join(' '), parts[parts.length - 1]];
+  };
+  const rsvpLabel = r => r === 'yes' ? 'Accepted' : r === 'no' ? 'Declined' : 'Awaiting Reply';
+  const rows = [['First Name','Last Name','Email','Phone','Group','RSVP','Table','Seat']];
+  state.guests.forEach(g => {
+    const [first, last] = splitName(g.name);
+    const [email, phone] = /^\+?[\d\s\-().]{7,}$/.test(g.contact || '')
+      ? ['', g.contact || ''] : [g.contact || '', ''];
+    const group = g.name;
+    rows.push([first, last, email, phone, group, rsvpLabel(g.rsvp), g.table || '', g.chair || '']);
+    const plusCount = parseInt(g.plus, 10) || 0;
+    for (let i = 0; i < plusCount; i++) {
+      rows.push(['Guest', `of ${g.name}`, '', '', group, 'Awaiting Reply', '', '']);
+    }
+  });
   const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
